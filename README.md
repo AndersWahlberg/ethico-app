@@ -38,8 +38,3 @@ Users and needs:
 * **Everyday shoppers:** need fast, clear results and simple explanations
 * **Value-driven consumers:** want deeper sources and the ability to weight categories (e.g., climate vs. labor rights)
 * **Skeptical users:** need transparency, uncertainty labels, and clear source attribution
-
-(Placeholder image – replace with your own screenshot later)
-<img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Sleeping_cat_on_her_back.jpg" width="350">
-
-Example output concept (illustrative only):
