@@ -1,0 +1,16 @@
+# Python environments and generated files
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Local data and configuration
+*.sqlite3
+*.db
+.env
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1 @@
+"""Ethico backend application."""
