@@ -62,7 +62,10 @@ void main() {
     await tester.tap(find.text('Look up product'));
     await tester.pumpAndSettle();
     expect(find.text('Demo Drink'), findsNothing);
-    expect(find.text('Product not found in the demo dataset.'), findsOneWidget);
+    expect(
+      find.text('Product not found in the local dataset.'),
+      findsOneWidget,
+    );
   });
 
   test(

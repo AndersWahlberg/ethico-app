@@ -13,7 +13,9 @@ Camera or manual EAN -> Flutter -> HTTP/JSON -> FastAPI -> SQLite
 - `product_api.dart` owns the HTTP request, a ten-second timeout, and JSON parsing.
   Tests inject an HTTP client; the screen closes only clients it creates.
 - `main.py` validates EAN shape/check digit and maps lookup results to HTTP.
-- `database.py` initializes and queries a single products table. Each operation
+- `product_details.dart` displays product facts and per-source scope/date, and
+  opens HTTP(S) source links in the browser using url_launcher.
+- `database.py` initializes and queries products and their sources. Each operation
   closes its connection; queries use placeholders rather than SQL interpolation.
 
 An application factory accepts a database path so tests can use temporary files.
@@ -31,12 +33,15 @@ Success (200):
   "ean": "2000000000015",
   "product_name": "Demo Oat Drink",
   "brand": "Demo Meadow",
-  "company": "Fictional Meadow Foods"
+  "company": "Fictional Meadow Foods",
+  "company_role": null,
+  "is_demo": true,
+  "sources": []
 }
 ```
 
 Unknown valid EAN: 404 with
-`{"detail":"Product not found in the demo dataset."}`.
+`{"detail":"Product not found in the local dataset."}`.
 
 Invalid length, characters, or check digit: 422 with a readable detail message.
 The UI trims manual whitespace and checks length/characters; the backend is the
@@ -47,19 +52,35 @@ integrity check.
 
 ## Database and evidence limits
 
-One table: `products(ean TEXT PRIMARY KEY, product_name TEXT, brand TEXT,
-company TEXT)`, with all name fields non-null. Startup inserts three fixtures
-with INSERT OR IGNORE, preserving edits to existing rows.
+The products table adds nullable `company_role` and boolean `is_demo` (stored as
+an SQLite integer). A separate `product_sources` table has `ean`, `title`, `url`,
+`checked_on`, and `supports`; `(ean, url)` is its primary key. One product can
+have multiple references, each with a clear statement of what it supports.
 
-This denormalized table deliberately keeps the first lookup readable. Brand,
-manufacturer, and parent-company relationships will need separate modeling once
-we introduce verified evidence. Current company values are fictional labels,
-not researched ownership claims. No ethical claims or scores are generated.
+Startup checks the old schema with PRAGMA table_info, adds missing columns, and
+marks the existing three demo codes. It imports missing records from
+`app/curated_products.json` with their sources in a transaction. Existing records
+are preserved, and sources are attached only when a curated product is newly
+inserted, to avoid attaching evidence to unrelated local edits. Repeated starts
+do not duplicate data or refresh check dates. Changing an existing curated record
+requires a deliberate database update alongside an evidence review; editing the
+JSON alone does not overwrite that row.
+
+`checked_on` records the source review date, not the server startup date or a
+guarantee of current accuracy. Unknown roles remain null and unsourced rows have
+an empty sources list. The API validates source dates and HTTP(S) URLs.
+
+The first real record is Leader's 300 g creatine product, EAN 6430051512933.
+Kespro identifies the EAN and manufacturer; Leader's own page supports the
+product name. Manufacturer, brand owner, and parent company are distinct roles.
+This record asserts only the manufacturer role, with source attribution. No
+ethical claims, scores, or independent manufacturer audit are implied.
 
 ## Dependencies and platform choices
 
 Python: FastAPI and Uvicorn, plus pytest/HTTPX for tests. sqlite3 is built in.
-Flutter: http 1.3.0 and mobile_scanner 6.0.2, pinned for the installed Flutter
+Flutter: http 1.3.0, mobile_scanner 6.0.2, and url_launcher 6.3.1 for source links,
+pinned for the installed Flutter
 3.29.2 / Dart 3.7.2 and Android build tools. The scanner's bundled barcode model
 works without a first-use model download, at the cost of extra app size.
 The model decodes barcodes; no generative AI or ethical analysis is involved.
@@ -75,7 +96,6 @@ mobile client. iOS native builds and camera behavior remain to be verified on ma
 
 ## Next learning step
 
-Walk through one lookup in the code and run the error cases. Then decide how
-to replace fictional fixtures with a small, verified dataset and source records
-before adding ownership research or ethical analysis.
+Scan the first real product, inspect its sources, then repeat the evidence review
+for a few more products before adding ownership research or ethical analysis.
 

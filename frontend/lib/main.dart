@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'product_api.dart';
+import 'product_details.dart';
 import 'scanner_screen.dart';
 
 void main() => runApp(const EthicoApp());
@@ -120,7 +121,7 @@ class _LookupScreenState extends State<LookupScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Demo dataset only. Products and companies are fictional.',
+            'Small local dataset. Fictional demo products are labelled separately.',
           ),
           const Text('Try: 2000000000015'),
           if (_loading)
@@ -133,24 +134,7 @@ class _LookupScreenState extends State<LookupScreen> {
               padding: const EdgeInsets.only(top: 16),
               child: Text(_error!, semanticsLabel: _error),
             ),
-          if (_product != null)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _product!.name,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    Text('Brand: ${_product!.brand}'),
-                    Text('Company: ${_product!.company}'),
-                    Text('EAN: ${_product!.ean}'),
-                  ],
-                ),
-              ),
-            ),
+          if (_product != null) ProductDetails(product: _product!),
         ],
       ),
     ),

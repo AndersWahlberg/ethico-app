@@ -1,0 +1,23 @@
+[
+  {
+    "ean": "6430051512933",
+    "product_name": "Leader Performance Creatine Monohydrate 300 g",
+    "brand": "Leader",
+    "company": "Leader Foods Oy",
+    "company_role": "manufacturer",
+    "sources": [
+      {
+        "title": "Kespro: Leader sport nutrition kreatiini 300g",
+        "url": "https://www.kespro.com/tuotteet/leader-sport-nutrition-kreatiini-300g-ravintolisa-6430051512933",
+        "checked_on": "2026-09-05",
+        "supports": "Product listing identifies GTIN 6430051512933, the Leader brand, the 300 g product, and Leader Foods Oy as manufacturer."
+      },
+      {
+        "title": "Leader: Performance Creatine Monohydrate 300 g",
+        "url": "https://leader.fi/product/leader-creatine-monohydrate-300-g/",
+        "checked_on": "2026-09-05",
+        "supports": "Company product page supports the product name and 300 g size. The EAN-to-product match is supported by Kespro."
+      }
+    ]
+  }
+]

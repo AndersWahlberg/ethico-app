@@ -7,9 +7,11 @@ claims must be source-backed; future AI will analyze evidence, not invent opinio
 
 Scan an EAN barcode with the camera or enter it manually. Flutter requests a
 product from FastAPI, which reads a small SQLite database and returns the product
-name, brand, and company. All current records are fictional demo fixtures.
+name, brand, and company. The dataset contains three fictional demo fixtures and
+one real product with manually reviewed sources. Its result includes the company
+role, source links, what each source supports, and the source check date.
 
-No ethical scores, AI, web research, accounts, payments, or production services.
+No ethical scores, AI, automated web research, accounts, payments, or production services.
 
 ## Run on your Android emulator (Command Prompt)
 
@@ -21,8 +23,9 @@ cd /d "C:\Users\anwah\Documents\Codex\2026-09-05\i-want-to-start-a-new\outputs\e
 .venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
-Startup creates `backend/data/ethico.sqlite3` and inserts missing demo records.
-Existing rows are preserved. SQLite uses Python's built-in library.
+Startup creates or upgrades `backend/data/ethico.sqlite3` and inserts missing
+demo and curated records. Existing rows are preserved; do not delete your database
+to install this update. SQLite uses Python's built-in library.
 
 Start your emulator in Android Studio's Device Manager. In a second terminal:
 
@@ -32,7 +35,7 @@ flutter pub get
 flutter run
 ```
 
-Stop the old app run first with `q`. Camera support is a native plugin, so this
+Stop the old app run first with `q`. Source links use a new native plugin, so this
 change needs a full rebuild, not just hot reload. Flutter should use the JDK 17
 configured during setup.
 
@@ -48,6 +51,23 @@ These are test codes, not verified assignments to real products.
 Try `2000000000039` for a valid but unknown EAN, and `2000000000016` for an
 invalid check digit.
 
+### First real product
+
+Scan or enter **6430051512933**. Expected result:
+
+- Product: **Leader Performance Creatine Monohydrate 300 g**
+- Brand: **Leader**
+- Company: **Leader Foods Oy**, role: **Manufacturer**
+- Two source links, checked **2026-09-05**. Tap **Open source** to open a browser.
+
+Restart the backend to apply the database upgrade, then rebuild the app using the
+same API_BASE_URL as before. For your USB-connected Pixel, keep using
+`flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000` and `adb reverse` below.
+Look for **Sources** under the product details; scroll to see both references.
+Demo codes still work and are explicitly labelled fictional.
+
+See [the source notes](docs/product-sources.md) for the evidence and its limits.
+
 ## Camera test
 
 Tap **Scan barcode**, allow camera permission, and point the camera at an EAN-8
@@ -57,7 +77,7 @@ Camera frames are decoded on the device; only the detected EAN is sent to the AP
 
 An emulator's virtual camera may not show real products. Use an emulator camera
 configured for your webcam or a physical Android phone for a realistic scan.
-Real products will normally return **Product not found in the demo dataset**.
+Other real products will normally return **Product not found in the local dataset**.
 Also test denying camera access, backing out without scanning, backgrounding and
 resuming the scanner, and scanning again after a result. Manual entry remains
 available when the camera cannot be used.
@@ -109,6 +129,7 @@ ethico/
   backend/
     app/main.py          # Routes, validation, response schema
     app/database.py      # Schema, seed, parameterized SQL
+    app/curated_products.json # Reviewed real products and source metadata
     data/ethico.sqlite3  # Generated locally; ignored by Git
     tests/
     requirements.txt
@@ -116,6 +137,7 @@ ethico/
   frontend/
     lib/main.dart        # Input and result screen
     lib/product_api.dart # HTTP request and response parsing
+    lib/product_details.dart # Result, evidence, browser links
     lib/scanner_screen.dart
     test/widget_test.dart
     android/
@@ -124,6 +146,7 @@ ethico/
     pubspec.lock
   docs/
     architecture.md
+    product-sources.md   # Evidence for the first real product
     setup-notes.md       # Historical first-iteration setup
 ```
 
