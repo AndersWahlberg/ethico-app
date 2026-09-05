@@ -1,5 +1,8 @@
 # Architecture
 
+Implementation baseline reviewed on 2026-09-05: [ab7bcf5](https://github.com/AndersWahlberg/my-new-project/commit/ab7bcf5e9b7fa2fa867f872915b344c94eaf211e).
+See [status](status.md) for verification and [decisions](decisions.md) for recorded rationale.
+
 ```text
 Camera or manual EAN -> Flutter -> HTTP/JSON -> FastAPI -> SQLite
 ```
@@ -94,8 +97,9 @@ HTTPS defaults. The API address is set with API_BASE_URL at build/run time;
 the default targets the Android emulator. CORS is unnecessary for this native
 mobile client. iOS native builds and camera behavior remain to be verified on macOS.
 
-## Next learning step
+## Planned evolution
 
-Scan the first real product, inspect its sources, then repeat the evidence review
-for a few more products before adding ownership research or ethical analysis.
-
+The current company field is a name stored on each product, not a separate company
+entity or an ownership graph. Sources are associated with products; there is no
+ethical-claim model. Proposed company relationships, correction workflows, and
+ethical evidence profiles are described in the [roadmap](roadmap.md).

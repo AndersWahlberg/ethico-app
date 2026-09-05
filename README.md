@@ -3,6 +3,13 @@
 Ethico helps users understand the companies behind products. Future ethical
 claims must be source-backed; future AI will analyze evidence, not invent opinions.
 
+## Project documentation
+
+Start with [current status](docs/status.md), then [architecture](docs/architecture.md),
+[roadmap](docs/roadmap.md), and [decisions](docs/decisions.md).
+The [documentation index](docs/README.md) explains how to keep these up to date.
+The [original project idea](docs/project-idea.md) describes the long-term vision.
+
 ## Current MVP
 
 Scan an EAN barcode with the camera or enter it manually. Flutter requests a
@@ -15,10 +22,18 @@ No ethical scores, AI, automated web research, accounts, payments, or production
 
 ## Run on your Android emulator (Command Prompt)
 
-Start the backend in one terminal:
+Prerequisites: Python 3.12, Flutter (the documented working setup uses
+Flutter 3.29.2 / Dart 3.7.2), Android SDK/emulator, and JDK 17 configured for Flutter.
+The examples below use Windows Command Prompt. Open each terminal in your local
+repository root (the folder containing this README), regardless of its folder name.
+
+Start the backend in one terminal. On a fresh checkout, create the environment once
+with `py -3.12 -m venv backend\.venv` from the repository root.
+If your Python 3.12 installation uses `python` instead of `py`, use
+`python -m venv backend\.venv`. Reuse an existing environment on subsequent runs:
 
 ```cmd
-cd /d "C:\Users\anwah\Documents\Codex\2026-09-05\i-want-to-start-a-new\outputs\ethico\backend"
+cd backend
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
@@ -30,14 +45,14 @@ to install this update. SQLite uses Python's built-in library.
 Start your emulator in Android Studio's Device Manager. In a second terminal:
 
 ```cmd
-cd /d "C:\Users\anwah\Documents\Codex\2026-09-05\i-want-to-start-a-new\outputs\ethico\frontend"
+cd frontend
 flutter pub get
 flutter run
 ```
 
-Stop the old app run first with `q`. Source links use a new native plugin, so this
-change needs a full rebuild, not just hot reload. Flutter should use the JDK 17
-configured during setup.
+If an app run is already active, stop it with `q` before restarting.
+After native plugin changes, run a full rebuild rather than relying on hot reload.
+Flutter should use the JDK 17 configured during setup.
 
 Tap **Look up product** after entering one of these:
 
@@ -60,8 +75,9 @@ Scan or enter **6430051512933**. Expected result:
 - Company: **Leader Foods Oy**, role: **Manufacturer**
 - Two source links, checked **2026-09-05**. Tap **Open source** to open a browser.
 
-Restart the backend to apply the database upgrade, then rebuild the app using the
-same API_BASE_URL as before. For your USB-connected Pixel, keep using
+When upgrading an earlier checkout, restart the backend to apply the database
+upgrade and rebuild the app with the appropriate API_BASE_URL.
+For a USB-connected Android phone, use
 `flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000` and `adb reverse` below.
 Look for **Sources** under the product details; scroll to see both references.
 Demo codes still work and are explicitly labelled fictional.
@@ -86,6 +102,7 @@ available when the camera cannot be used.
 
 The default `http://10.0.2.2:8000` reaches the host computer from the Android
 emulator. In your computer browser, use:
+
 - [API docs](http://127.0.0.1:8000/docs)
 - [Demo lookup](http://127.0.0.1:8000/products/2000000000015)
 
@@ -98,7 +115,8 @@ flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000
 ```
 
 If adb is not on PATH, its executable is in
-`C:\Users\anwah\AppData\Local\Android\sdk\platform-tools`.
+`%LOCALAPPDATA%\Android\sdk\platform-tools` for a default Windows installation;
+otherwise use the SDK location configured in Android Studio.
 Only Android debug builds permit plain HTTP. iOS has a camera usage description
 but has not been built/tested here; local iOS networking configuration is not
 part of this Windows/Android milestone.
@@ -121,6 +139,7 @@ flutter test
 Backend tests use isolated temporary SQLite files. Flutter tests mock HTTP
 responses and test input, loading, results, invalid input, not-found, and failures.
 They do not prove physical camera decoding or emulator connectivity.
+See [status](docs/status.md) for version-specific results and checks not yet run.
 
 ## Structure
 
@@ -140,17 +159,21 @@ ethico/
     lib/product_details.dart # Result, evidence, browser links
     lib/scanner_screen.dart
     test/widget_test.dart
+    test/product_details_test.dart
     android/
     ios/
     pubspec.yaml
     pubspec.lock
   docs/
+    README.md           # Documentation index and maintenance workflow
+    status.md           # Current implementation and verification
+    roadmap.md          # Milestones and proposed next steps
+    decisions.md        # Decisions, reasons, and open questions
+    project-idea.md      # Original long-term vision
     architecture.md
     product-sources.md   # Evidence for the first real product
     setup-notes.md       # Historical first-iteration setup
 ```
 
-On a fresh checkout, create `backend/.venv` with Python 3.12:
-`python -m venv .venv`, then install the requirements above.
-See [architecture](docs/architecture.md) for design decisions and the API contract.
-
+See [architecture](docs/architecture.md) for the API contract and storage behavior.
+When changing code or data, follow the [documentation maintenance workflow](docs/README.md).

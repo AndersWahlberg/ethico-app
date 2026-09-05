@@ -1,5 +1,10 @@
 # Initial setup record
 
+Historical record of earlier milestones. The results and unresolved checks below
+apply to those milestones, not automatically to the latest code. For current
+verification, including the owner's later phone-test report, see [status](status.md).
+Use the [repository README](../README.md) for current run commands.
+
 ## Commands and results
 
 - Inspected the working directory using `Get-ChildItem` and `rg --files`, and
@@ -27,7 +32,7 @@
 ## Local tooling issues
 
 The normal Flutter Windows launcher failed. Commands used the existing Dart
-executable and `flutter_tools.snapshot` directly, as shown in the README.
+executable and `flutter_tools.snapshot` directly during that setup session.
 The SDK's `bin/internal/engine.version` was empty when inspected after the failed
 launcher calls. It was backed up in the workspace's `work/` directory and restored
 from the SDK's own Git HEAD. A stale engine package was refreshed by invalidating

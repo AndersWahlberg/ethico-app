@@ -6,6 +6,11 @@ Copy the template, paste it to your GitHub README and edit! -->
 
 Final project for the Building AI course
 
+> Original long-term vision, preserved for context. Ethical risk summaries, scores,
+> parent-company research, alternatives, and personalization below are not current
+> MVP features or approved implementation commitments. See [status](status.md) for
+> what exists and [roadmap](roadmap.md) for proposed next steps.
+
 ## Summary
 
 Ethico is a mobile app that lets users scan a product barcode and quickly see an evidence-based “ethical risk” summary for the product and its parent company. The goal is to make responsible purchasing decisions easier in everyday shopping by combining transparent data sources with simple AI-assisted summaries.
