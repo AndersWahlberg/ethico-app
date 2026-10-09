@@ -1,5 +1,38 @@
 # Project status
 
+## Curated-data validation update — 2026-10-09
+
+Startup now validates the complete curated JSON file before opening SQLite or
+performing any schema/seed/import writes. The API and importer share the existing
+EAN helper. Validation rejects malformed structures, missing/wrong-type/blank
+required fields, invalid EAN shape/checksum, duplicate EANs, malformed/non-HTTP(S)
+URLs, duplicate source URLs per product, and invalid YYYY-MM-DD calendar dates.
+Nullable company roles and empty source lists remain supported; facts are not
+normalized or overwritten. The curated product file and dependencies are unchanged.
+
+From `backend`, run `.venv\Scripts\python.exe -m app.validate_curated` for a
+database-free check; an optional file path checks a proposed dataset. Errors include
+file/product/source/field context and return a non-zero exit code. The existing
+database-preservation and idempotent-startup behavior remains in place.
+
+Verification for the containing commit/PR on `feat/curated-data-validation`:
+
+- `.venv\Scripts\python.exe -B -m app.validate_curated`: passed for the real dataset
+  (one curated product).
+- `.venv\Scripts\python.exe -B -m pytest -q -p no:cacheprovider
+  --basetemp=C:\Users\anwah\Documents\Codex\2026-10-09\l-y\work\ethico-validation-final
+  --tb=short`: **111 passed**, including 97 new parametrized validation/command/import
+  cases; two existing Starlette HTTPX and AnyIO BlockingPortal deprecation warnings.
+- From `frontend`, `flutter analyze`: no issues; `flutter test`: **12 passed**.
+- Python syntax/indentation checks and `git diff --check` passed. No Python formatter
+  or linter is configured/installed; no formatting dependency was added. These
+  checks ran before the final test pass.
+
+Tests prove that an invalid later product leaves a pre-existing legacy database
+byte-for-byte unchanged, invalid input creates no new database, and the standalone
+command returns success/failure without database access. Validation checks data
+shape and identifiers, not source truth or live URL availability.
+
 ## UTF-8 decoding update — 2026-10-09
 
 The Flutter API client now explicitly decodes successful response bytes as UTF-8

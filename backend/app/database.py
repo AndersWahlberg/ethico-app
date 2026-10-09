@@ -1,11 +1,11 @@
 """SQLite storage, demo fixtures, and a small manually reviewed dataset."""
-import json
 import sqlite3
 from pathlib import Path
 from typing import Any
 
+from app.validate_curated import CURATED_PRODUCTS_PATH, load_curated_products
+
 DATABASE_PATH = Path(__file__).resolve().parent.parent / "data" / "ethico.sqlite3"
-CURATED_PRODUCTS_PATH = Path(__file__).with_name("curated_products.json")
 DEMO_PRODUCTS = [
     ("2000000000015", "Demo Oat Drink", "Demo Meadow", "Fictional Meadow Foods"),
     ("2000000000022", "Demo Hand Soap", "Demo River", "Fictional River Care"),
@@ -13,7 +13,8 @@ DEMO_PRODUCTS = [
 ]
 
 
-def initialize_database(path: Path) -> None:
+def initialize_database(path: Path, curated_path: Path = CURATED_PRODUCTS_PATH) -> None:
+    products = load_curated_products(curated_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(path)
     try:
@@ -46,7 +47,7 @@ def initialize_database(path: Path) -> None:
                 (ean, product_name, brand, company, is_demo) VALUES (?, ?, ?, ?, 1)""",
                 DEMO_PRODUCTS,
             )
-            for product in json.loads(CURATED_PRODUCTS_PATH.read_text(encoding="utf-8")):
+            for product in products:
                 inserted = connection.execute(
                     """INSERT OR IGNORE INTO products
                     (ean, product_name, brand, company, company_role, is_demo)
