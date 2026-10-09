@@ -10,6 +10,7 @@ Start here when joining the project or resuming work after a break.
 | [Decision log](decisions.md) | Recorded decisions, reasons, consequences, and open questions |
 | [Source registry](data-sources.md) | Official provider registry, evidence/status semantics, provenance and reuse limits |
 | [Product sources](product-sources.md) | Current reviewed product references and Open Food Facts integration notes |
+| [Curated corrections](curated-corrections.md) | Deliberate review, validation, preview/apply commands, conflicts and rollback |
 | [Original project idea](project-idea.md) | Long-term product vision; not a list of implemented features |
 | [Setup history](setup-notes.md) | Historical tooling and milestone results; not current verification |
 | [Repository README](../README.md) | Setup, run commands, sample EANs, and test commands |

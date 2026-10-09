@@ -21,6 +21,8 @@ retained for historical references; P2 now explicitly precedes P1.
 - [x] Explicit UTF-8 response decoding and regression coverage.
 - [x] Curated-data validation before database access, with a developer command.
 - [x] Independent backend and Flutter checks in GitHub Actions.
+- [x] Explicit curated corrections with expected-state checks, read-only preview,
+  atomic facts/source replacement, conflict blocking and repeat-run safety.
 - [x] Read-only Open Food Facts fallback on local misses, with attribution,
   retrieval dates, unknown legal company and no persistence.
 
@@ -66,7 +68,10 @@ and legal/status fidelity. No new provider or evidence schema is implemented.
 
 ## P2 — Remaining MVP hardening and traceable corrections
 
-First proposed implementation phase. Use the [technical audit](audits/2026-10-09-technical-audit.md)
+Partially complete: the [traceable-correction workflow](curated-corrections.md)
+is implemented and tested on temporary databases. Scanner/end-to-end hardening
+and renewed physical-device verification remain unfinished.
+Use the [technical audit](audits/2026-10-09-technical-audit.md)
 as a historical reference; UTF-8 decoding, curated validation and CI findings have
 already been addressed. Do not repeat completed work merely because it is in the audit.
 
@@ -76,10 +81,10 @@ Completion criteria:
   denial, lifecycle/background/resume, repeated scans and lookup failure/retry.
 - Recheck the real Android barcode flow on a physical device when available.
   Record device/build/date and actual results; CI is not proof of camera behavior.
-- Design and implement a deliberate correction workflow with a reviewable diff,
+- [x] Implement a deliberate correction workflow with a reviewable diff,
   expected prior state and explicit conflict handling. Correct product facts and
   their sources together, with atomic writes, rollback and repeat-run safety.
-- Preserve before/after provenance and the meaning of review dates. Do not silently
+- [x] Preserve before/after provenance and the meaning of review dates. Do not silently
   overwrite local edits, reset the database or refresh dates without human review.
 - Keep CI green; address remaining meaningful error/timeout gaps and existing
   dependency warnings deliberately, without unnecessary upgrades.

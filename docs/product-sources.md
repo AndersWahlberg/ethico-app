@@ -32,7 +32,7 @@ The reviewed record is in `backend/app/curated_products.json`, versioned with
 the code so another checkout can import it. New records and their sources are
 inserted together at startup. Existing database rows are not overwritten by
 subsequent imports. If correcting an existing row, review and update its product
-facts and sources together in a deliberate database change; do not merely change
+facts and sources together using the explicit [correction workflow](curated-corrections.md); do not merely change
 the JSON and assume the existing row has changed.
 
 The three original demo records remain explicitly fictional and have no sources.
