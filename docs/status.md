@@ -1,5 +1,20 @@
 # Project status
 
+## Evidence-source strategy — 2026-10-09 (documentation only)
+
+The [official source registry](data-sources.md) now records provider candidates,
+access/reuse limits, A–D source classes, distinct evidence statuses and future
+provenance metadata. D008 in the [decision log](decisions.md) adopts evidence
+provenance and legal/status fidelity. The [roadmap](roadmap.md) puts remaining MVP
+hardening and traceable corrections before a 3–5-product learning pilot and deeper
+entity/evidence integrations.
+
+Implementation baseline: `b5274ecbc2b0ec290849f3dd3773d86d828f1704`, including
+Open Food Facts v1. No application, API/schema, curated data or dependency changes.
+Local application tests were not rerun for this documentation-only task; earlier
+results below retain their original scope. Documentation checks and any automatic
+PR CI results are recorded in the containing pull request.
+
 ## Open Food Facts fallback — 2026-10-09
 
 Local SQLite lookup still has priority and returns existing facts and reviewed

@@ -1,6 +1,8 @@
 # First real product: Leader creatine
 
 This reviewed record is separate from the [external fallback](#open-food-facts-read-only-fallback) below.
+The broader [source registry](data-sources.md) describes future candidates and
+evidence rules; it does not extend the claims supported by this reviewed record.
 
 Reviewed on **2026-09-05**. The user supplied EAN **6430051512933**, the product
 description "kreatiinimonohydraatti", and manufacturer "Leader Foods". The EAN
