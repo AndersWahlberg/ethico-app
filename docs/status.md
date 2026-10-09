@@ -1,5 +1,32 @@
 # Project status
 
+## Open Food Facts fallback — 2026-10-09
+
+Local SQLite lookup still has priority and returns existing facts and reviewed
+sources unchanged. Local misses now use one read-only Open Food Facts v3 request
+for code, name and brands. External products are never persisted. Missing company
+and role remain null; missing brand is represented explicitly. Sources show Open
+Food Facts, its product URL, scope, UTC retrieval date and ODbL 1.0 attribution;
+retrieval is not a human check. Upstream failures/unusable records return a distinct
+503; an upstream 404 retains not-found behavior with dataset-neutral wording.
+
+Verified locally on Python 3.12.14 and Flutter 3.29.2 / Dart 3.7.2:
+
+- Dart formatting completed for changed files.
+- `python -B -m app.validate_curated`: passed (one unchanged curated product).
+- Full pytest suite: **148 passed**, two existing deprecation warnings retained.
+  Tests mock upstream HTTP, including timeouts, malformed data, Unicode, no local-hit
+  calls, and no external persistence. Temporary SQLite files are isolated.
+- `flutter pub get`: succeeded without dependency changes.
+- `flutter analyze`: no issues; full `flutter test`: **15 passed**.
+- One optional read-only production smoke request for **3017620422003** returned
+  **HTTP 200**; required identity fields and brand parsed, company stayed null.
+  No writes, retries, or stored third-party data. Automated tests remain offline.
+
+CI results for this feature are recorded in its PR. Physical-device scanning was
+not rerun. Shared upstream rate limits, dataset completeness and future company
+resolution remain limitations; see [source notes](product-sources.md#open-food-facts-read-only-fallback).
+
 ## GitHub Actions CI — 2026-10-09
 
 The containing CI commit/PR adds `.github/workflows/ci.yml` for pull requests into

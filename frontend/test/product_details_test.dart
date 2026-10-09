@@ -32,6 +32,70 @@ Widget screen(Product product, Future<bool> Function(Uri) openLink) =>
     );
 
 void main() {
+  for (final brand in <String?>['Mäkelä, München', null]) {
+    testWidgets(
+      'external API result renders provenance and nullable facts ($brand)',
+      (tester) async {
+        final client = MockClient(
+          (_) async => http.Response.bytes(
+            utf8.encode(
+              jsonEncode({
+                'ean': '2000000000039',
+                'product_name': 'Crème Äänekoski',
+                'brand': brand,
+                'company': null,
+                'company_role': null,
+                'is_demo': false,
+                'sources': [
+                  {
+                    'title': 'Open Food Facts',
+                    'provider': 'Open Food Facts',
+                    'url':
+                        'https://world.openfoodfacts.org/product/2000000000039',
+                    'checked_on': null,
+                    'retrieved_on': '2026-10-09',
+                    'license': 'ODbL 1.0',
+                    'supports':
+                        'Product name and brand only. Company identity is not resolved.',
+                  },
+                ],
+              }),
+            ),
+            200,
+            headers: {'content-type': 'application/json'},
+          ),
+        );
+        addTearDown(client.close);
+        final result = await ProductApi(client).lookup('2000000000039');
+        expect(result.company, isNull);
+        expect(result.companyRole, isNull);
+        expect(result.brand, brand);
+        expect(result.isDemo, isFalse);
+        Uri? opened;
+        await tester.pumpWidget(
+          screen(result, (uri) async {
+            opened = uri;
+            return true;
+          }),
+        );
+        expect(find.text('Crème Äänekoski'), findsOneWidget);
+        expect(find.text('Brand: ${brand ?? 'Not supplied'}'), findsOneWidget);
+        expect(find.text('Company: Not yet resolved'), findsOneWidget);
+        expect(find.text('External dataset: Open Food Facts'), findsOneWidget);
+        expect(find.text('Open Food Facts'), findsOneWidget);
+        expect(find.text('Retrieved: 2026-10-09'), findsOneWidget);
+        expect(find.text('License: ODbL 1.0'), findsOneWidget);
+        expect(find.textContaining('Source checked:'), findsNothing);
+        expect(find.text(result.sources.single.supports), findsOneWidget);
+        expect(find.text(result.sources.single.url), findsOneWidget);
+        await tester.ensureVisible(find.text('Open source'));
+        await tester.tap(find.text('Open source'));
+        await tester.pumpAndSettle();
+        expect(opened.toString(), result.sources.single.url);
+      },
+    );
+  }
+
   test('preserves UTF-8 JSON text without a charset', () async {
     final client = MockClient(
       (_) async => http.Response.bytes(
@@ -115,6 +179,9 @@ void main() {
       }),
     );
     expect(find.text('Company role: Manufacturer'), findsOneWidget);
+    expect(find.text('Company: Leader Foods Oy'), findsOneWidget);
+    expect(find.textContaining('External dataset:'), findsNothing);
+    expect(find.textContaining('Retrieved:'), findsNothing);
     expect(find.text(source.supports), findsOneWidget);
     expect(find.text('Source checked: 2026-09-05'), findsOneWidget);
     await tester.tap(find.text('Open source'));
