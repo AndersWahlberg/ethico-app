@@ -74,7 +74,8 @@ class ProductApi {
         'The server could not complete the lookup. Please retry.',
       );
     }
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final json =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
     return Product(
       json['ean'] as String,
       json['product_name'] as String,
