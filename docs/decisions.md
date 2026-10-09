@@ -79,6 +79,21 @@ Consequence: update relevant documents alongside meaningful changes, distinguish
 proposals from approved scope, and report test evidence without implying unrun
 checks passed. Follow the [maintenance workflow](README.md).
 
+## D007 — Read-only Open Food Facts fallback
+
+Status: adopted 2026-10-09; implemented in `app/open_food_facts.py` and the lookup UI.
+
+Keep local products authoritative. Use the Open Food Facts v3 product-read API
+only on a local miss, without caching, writes, or mixing records into curated
+SQLite. Promote the existing HTTPX 0.28.1 pin to runtime dependencies. Require a
+matching barcode and nonblank name; keep missing brand and legal company unknown.
+
+Reason: broaden product coverage without inventing legal identities or ethical
+claims. Separate external retrieval dates from human review dates and show source,
+scope and license. Failures/incomplete records return a retryable 503 rather than
+a false 404. Consequence: live lookup depends on upstream availability and the
+shared per-IP rate limit; company resolution remains a separate future layer.
+
 ## Open proposals
 
 The following are not adopted decisions:
@@ -86,7 +101,7 @@ The following are not adopted decisions:
 - Expand the pilot to 10–20 reviewed products.
 - Introduce stable company identities and sourced ownership relationships.
 - Choose an ethical evidence schema, first category, and any rating methodology.
-- Select external data sources, automated research, AI models, or hosting.
+- Select additional external data sources, automated research, AI models, or hosting.
 - Choose offline support, accounts, monetization, or an iOS milestone.
 
 See the [roadmap](roadmap.md) for proposed order and completion criteria.

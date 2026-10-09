@@ -18,6 +18,12 @@ name, brand, and company. The dataset contains three fictional demo fixtures and
 one real product with manually reviewed sources. Its result includes the company
 role, source links, what each source supports, and the source check date.
 
+Local misses fall back to a read-only Open Food Facts barcode lookup. External
+results show product name, reported brand when available, unresolved company,
+and Open Food Facts attribution, product URL, retrieval date and ODbL 1.0 license.
+They are never saved to SQLite. A provider outage is reported as a temporary
+failure, not as a missing product. See [source and privacy notes](docs/product-sources.md#open-food-facts-read-only-fallback).
+
 No ethical scores, AI, automated web research, accounts, payments, or production services.
 
 ## Run on your Android emulator (Command Prompt)
@@ -63,7 +69,7 @@ Tap **Look up product** after entering one of these:
 | 0000000000017 | Demo Tea | Demo Leaf | Fictional Leaf Foods |
 
 These are test codes, not verified assignments to real products.
-Try `2000000000039` for a valid but unknown EAN, and `2000000000016` for an
+Try `2000000000039` for a valid local-miss EAN (which now queries Open Food Facts), and `2000000000016` for an
 invalid check digit.
 
 ### First real product
@@ -93,7 +99,8 @@ Camera frames are decoded on the device; only the detected EAN is sent to the AP
 
 An emulator's virtual camera may not show real products. Use an emulator camera
 configured for your webcam or a physical Android phone for a realistic scan.
-Other real products will normally return **Product not found in the local dataset**.
+Other real products are checked in Open Food Facts after a local miss. If both
+datasets lack the EAN, the app shows **Product not found.**
 Also test denying camera access, backing out without scanning, backgrounding and
 resuming the scanner, and scanning again after a result. Manual entry remains
 available when the camera cannot be used.
@@ -161,7 +168,8 @@ flutter analyze
 flutter test
 ```
 
-Backend tests use isolated temporary SQLite files. Flutter tests mock HTTP
+Backend tests use isolated temporary SQLite files and mocked provider HTTP;
+neither backend nor Flutter automated tests call Open Food Facts. Flutter tests mock HTTP
 responses and test input, loading, results, invalid input, not-found, and failures.
 They do not prove physical camera decoding or emulator connectivity.
 See [status](docs/status.md) for version-specific results and checks not yet run.
@@ -173,6 +181,7 @@ ethico/
   backend/
     app/main.py          # Routes, validation, response schema
     app/database.py      # Schema, seed, parameterized SQL
+    app/open_food_facts.py # Read-only external fallback; no persistence
     app/curated_products.json # Reviewed real products and source metadata
     data/ethico.sqlite3  # Generated locally; ignored by Git
     tests/

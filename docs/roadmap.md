@@ -1,10 +1,10 @@
 # Roadmap
 
-Updated: **2026-09-05**.
+Updated: **2026-10-09** (first external provider integration).
 Current implementation and test evidence: [status](status.md).
 
-Only the documentation-first step is currently agreed in this discussion.
-The development steps below are proposals, ordered to reduce uncertainty.
+The completed milestones below reflect implemented work.
+Uncompleted development steps remain proposals, ordered to reduce uncertainty.
 There are no promised delivery dates.
 
 ## Completed implementation milestones
@@ -15,6 +15,12 @@ There are no promised delivery dates.
 - [x] Fictional demo records explicitly distinguished from real data.
 - [x] First real product with manufacturer role and scoped, dated source links.
 - [x] Backend and Flutter automated test suites added.
+- [x] First external product provider: read-only Open Food Facts fallback on local
+  misses, with attribution, retrieval dates, unknown company, and no persistence.
+
+Company resolution remains a separate future layer (P3). Open Food Facts brand
+data does not establish legal company ownership. This integration does not complete
+the curated pilot, data-correction workflow, or ethical evidence milestones.
 
 Implementation completion does not imply every device/platform check passed.
 See status for the exact verification record.

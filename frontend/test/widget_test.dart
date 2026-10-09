@@ -7,6 +7,43 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  testWidgets('temporary external failure is retryable and clears old facts', (
+    tester,
+  ) async {
+    var calls = 0;
+    final client = MockClient(
+      (_) async =>
+          ++calls == 2
+              ? http.Response('{"detail":"private upstream error"}', 503)
+              : http.Response(
+                '{"ean":"2000000000015","product_name":"Demo Drink","brand":"Demo","company":"Fictional"}',
+                200,
+              ),
+    );
+    addTearDown(client.close);
+    await tester.pumpWidget(EthicoApp(api: ProductApi(client)));
+    await tester.enterText(find.byType(TextField), '2000000000015');
+    await tester.tap(find.text('Look up product'));
+    await tester.pumpAndSettle();
+    expect(find.text('Demo Drink'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '2000000000039');
+    await tester.tap(find.text('Look up product'));
+    await tester.pumpAndSettle();
+    expect(find.text('Demo Drink'), findsNothing);
+    expect(
+      find.text(
+        'Product information could not be checked right now. Please try again.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Product not found.'), findsNothing);
+    expect(find.textContaining('private upstream error'), findsNothing);
+    await tester.tap(find.text('Look up product'));
+    await tester.pumpAndSettle();
+    expect(find.text('Demo Drink'), findsOneWidget);
+    expect(calls, 3);
+  });
+
   testWidgets('manual lookup sends EAN and displays the response', (
     tester,
   ) async {
@@ -62,10 +99,7 @@ void main() {
     await tester.tap(find.text('Look up product'));
     await tester.pumpAndSettle();
     expect(find.text('Demo Drink'), findsNothing);
-    expect(
-      find.text('Product not found in the local dataset.'),
-      findsOneWidget,
-    );
+    expect(find.text('Product not found.'), findsOneWidget);
   });
 
   test(
