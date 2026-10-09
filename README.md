@@ -123,6 +123,22 @@ part of this Windows/Android milestone.
 
 ## Tests
 
+Validate the curated dataset without opening or modifying SQLite, from `backend`:
+
+```cmd
+.venv\Scripts\python.exe -m app.validate_curated
+```
+
+An optional file path validates a proposed dataset:
+`.venv\Scripts\python.exe -m app.validate_curated path\to\curated.json`.
+Invalid data exits non-zero with the file, product index/EAN, and relevant field.
+Validation rejects wrong JSON shapes, missing/wrong-type/blank required fields,
+invalid EAN-8/13 checksums or non-ASCII digits, duplicate EANs, malformed/non-web
+source URLs, duplicate source URLs per product, and invalid YYYY-MM-DD dates.
+`company_role` must be present but may be null; `sources` may be an empty list.
+Startup runs the same full-dataset validation before opening SQLite or inserting
+any rows. Validation checks structure and identifiers, not the truth of source claims.
+
 From `backend`:
 
 ```cmd
