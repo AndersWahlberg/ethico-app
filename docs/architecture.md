@@ -15,7 +15,10 @@ Camera or manual EAN -> Flutter -> HTTP/JSON -> FastAPI -> SQLite
   pauses on app inactivity, resumes on return, and is disposed when leaving.
 - `product_api.dart` owns the HTTP request, a ten-second timeout, and JSON parsing.
   Tests inject an HTTP client; the screen closes only clients it creates.
-- `main.py` validates EAN shape/check digit and maps lookup results to HTTP.
+- `main.py` maps lookup results to HTTP and uses `ean.py` for EAN shape/check-digit
+  validation. The same helper is used by curated-data validation.
+- `validate_curated.py` validates the complete JSON dataset before database access
+  and provides the read-only `python -m app.validate_curated [path]` command.
 - `product_details.dart` displays product facts and per-source scope/date, and
   opens HTTP(S) source links in the browser using url_launcher.
 - `database.py` initializes and queries products and their sources. Each operation
@@ -60,7 +63,22 @@ an SQLite integer). A separate `product_sources` table has `ean`, `title`, `url`
 `checked_on`, and `supports`; `(ean, url)` is its primary key. One product can
 have multiple references, each with a clear statement of what it supports.
 
-Startup checks the old schema with PRAGMA table_info, adds missing columns, and
+Startup first reads and validates the complete curated file, before opening SQLite
+or creating its parent directory. Invalid input raises a contextual `CuratedDataError`
+without changing schema, demo rows, existing products, or sources. Validation covers
+list/object shapes, required nonblank string fields, EAN checksums/uniqueness, source
+HTTP(S) URLs with hosts, per-product duplicate URLs, and exact YYYY-MM-DD calendar
+dates. It reuses the existing Pydantic HttpUrl validation for API-compatible URLs;
+no dependency or schema framework was added. URL normalization is used only for
+duplicate comparison (for example, host case and the default trailing slash);
+original data is preserved for import. No live URL retrieval or fact verification occurs.
+
+The nullable role must still be present. Empty source lists and an empty dataset
+are allowed; additional fields are tolerated, but only the existing model's fields
+are imported. Required text is checked without trimming or rewriting stored facts.
+The command reports the first error; rerun it after correcting that error.
+
+After validation, startup checks the old schema with PRAGMA table_info, adds missing columns, and
 marks the existing three demo codes. It imports missing records from
 `app/curated_products.json` with their sources in a transaction. Existing records
 are preserved, and sources are attached only when a curated product is newly

@@ -1,5 +1,4 @@
 """Ethico's health and EAN lookup endpoints."""
-import re
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
@@ -9,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 
 from app.database import DATABASE_PATH, find_product, initialize_database
+from app.ean import is_valid_ean
 
 
 class ProductSource(BaseModel):
@@ -26,15 +26,6 @@ class Product(BaseModel):
     company_role: str | None
     is_demo: bool
     sources: list[ProductSource]
-
-
-def is_valid_ean(ean: str) -> bool:
-    """Accept EAN-8 or EAN-13 with a correct check digit."""
-    if not re.fullmatch(r"(?:[0-9]{8}|[0-9]{13})", ean):
-        return False
-    total = sum(int(digit) * (3 if index % 2 == 0 else 1)
-                for index, digit in enumerate(reversed(ean[:-1])))
-    return (10 - total % 10) % 10 == int(ean[-1])
 
 
 def create_app(database_path: Path = DATABASE_PATH) -> FastAPI:
