@@ -65,3 +65,26 @@ When behavior, architecture, data structures, setup, or major decisions change:
 - Update docs/roadmap.md when milestone status materially changes.
 
 Do not rewrite project history merely to make documentation look current.
+
+## Data and evidence
+
+When modifying curated product, company, or source data:
+
+- Validate identifiers such as EANs.
+- Preserve provenance.
+- Do not guess company relationships.
+- Do not silently replace conflicting evidence.
+- Make uncertainty representable rather than resolving it by assumption.
+- Prefer traceable corrections over destructive replacements.
+
+## Task completion
+
+When finishing a Codex task:
+
+1. Summarize what changed.
+2. List files changed.
+3. Report tests actually run and their results.
+4. Report unresolved risks, assumptions, or questions.
+5. Provide the branch name and commit SHA.
+6. If possible, push the branch and create a pull request into main.
+7. Stop after the requested task. Do not automatically begin another feature.
