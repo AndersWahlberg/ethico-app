@@ -123,6 +123,15 @@ part of this Windows/Android milestone.
 
 ## Tests
 
+[GitHub Actions CI](.github/workflows/ci.yml) runs on pull requests targeting `main`
+and pushes to `main`. Independent Ubuntu jobs install the existing backend
+requirements with Python 3.12, validate curated data and run pytest, and use Flutter
+3.29.2 (Dart 3.7.2) for `flutter pub get`, `flutter analyze`, and `flutter test`.
+CI does not build native artifacts or test physical-device barcode scanning,
+camera permissions, or emulator/device connectivity. No local database, virtual
+environment, `android/local.properties`, or generated Flutter/build files are needed
+in Git; the jobs install dependencies and generate their own temporary files.
+
 Validate the curated dataset without opening or modifying SQLite, from `backend`:
 
 ```cmd
