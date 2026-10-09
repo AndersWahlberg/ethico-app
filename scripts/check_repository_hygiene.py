@@ -1,6 +1,7 @@
 """Fail CI when tracked repository files contain likely private/local material."""
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -57,14 +58,31 @@ ALLOWED_EMAILS = {
 }
 
 
-def tracked_files() -> list[Path]:
-    result = subprocess.run(
-        ["git", "ls-files", "-z"],
+def run_git(*args: str) -> bytes:
+    return subprocess.run(
+        ["git", *args],
         cwd=ROOT,
         check=True,
         capture_output=True,
-    )
-    return [ROOT / item.decode("utf-8") for item in result.stdout.split(b"\0") if item]
+    ).stdout
+
+
+def tracked_files() -> list[Path]:
+    return [ROOT / item.decode("utf-8") for item in run_git("ls-files", "-z").split(b"\0") if item]
+
+
+def repository_owner() -> str | None:
+    github_repository = os.environ.get("GITHUB_REPOSITORY")
+    if github_repository and "/" in github_repository:
+        return github_repository.split("/", 1)[0]
+
+    try:
+        remote = run_git("remote", "get-url", "origin").decode("utf-8").strip()
+    except subprocess.CalledProcessError:
+        return None
+
+    match = re.search(r"github\.com[/:]([^/]+?)/[^/]+(?:\.git)?$", remote)
+    return match.group(1) if match else None
 
 
 def safe_text(path: Path) -> str | None:
@@ -76,6 +94,14 @@ def safe_text(path: Path) -> str | None:
 
 def main() -> int:
     findings: list[str] = []
+    owner = repository_owner()
+    personal_repo_markers = ()
+    if owner:
+        personal_repo_markers = (
+            f"github.com/{owner}/",
+            f"api.github.com/repos/{owner}/",
+            f"raw.githubusercontent.com/{owner}/",
+        )
 
     for path in tracked_files():
         relative = path.relative_to(ROOT)
@@ -104,13 +130,16 @@ def main() -> int:
                 findings.append(f"email address in tracked text: {relative}")
                 break
 
+        if any(marker in text for marker in personal_repo_markers):
+            findings.append(f"personal GitHub owner URL in tracked text: {relative}")
+
     if findings:
         print("Repository hygiene check failed:", file=sys.stderr)
         for finding in sorted(set(findings)):
             print(f"- {finding}", file=sys.stderr)
         print(
             "Remove/sanitize personal data or secret material before committing. "
-            "Use neutral placeholders for local paths.",
+            "Use neutral placeholders for local paths and project-owned metadata.",
             file=sys.stderr,
         )
         return 1
