@@ -1,11 +1,14 @@
 # Roadmap
 
-Updated: **2026-10-09** (first external provider integration).
-Current implementation and test evidence: [status](status.md).
+Updated: **2026-10-09** (evidence-source strategy).
+Current implementation and verification: [status](status.md).
+Provider candidates and constraints: [source registry](data-sources.md).
 
-The completed milestones below reflect implemented work.
-Uncompleted development steps remain proposals, ordered to reduce uncertainty.
-There are no promised delivery dates.
+Completed milestones reflect implemented work. Uncompleted steps are proposals,
+not authorization to implement, and have no promised delivery dates. This revision
+replaces the earlier 10–20-product expansion with a 3–5-product learning pilot,
+after remaining hardening and traceable corrections. Existing P1/P2 labels are
+retained for historical references; P2 now explicitly precedes P1.
 
 ## Completed implementation milestones
 
@@ -14,100 +17,158 @@ There are no promised delivery dates.
 - [x] EAN-8/EAN-13 camera scanner and lookup/error UI.
 - [x] Fictional demo records explicitly distinguished from real data.
 - [x] First real product with manufacturer role and scoped, dated source links.
-- [x] Backend and Flutter automated test suites added.
-- [x] First external product provider: read-only Open Food Facts fallback on local
-  misses, with attribution, retrieval dates, unknown company, and no persistence.
+- [x] Backend and Flutter automated test suites.
+- [x] Explicit UTF-8 response decoding and regression coverage.
+- [x] Curated-data validation before database access, with a developer command.
+- [x] Independent backend and Flutter checks in GitHub Actions.
+- [x] Read-only Open Food Facts fallback on local misses, with attribution,
+  retrieval dates, unknown legal company and no persistence.
 
-Company resolution remains a separate future layer (P3). Open Food Facts brand
-data does not establish legal company ownership. This integration does not complete
-the curated pilot, data-correction workflow, or ethical evidence milestones.
+Open Food Facts brand data does not establish company ownership. Its integration
+does not complete the reviewed pilot, correction workflow or ethical evidence
+milestones. Implementation completion does not imply all device checks passed;
+see status for the actual verification record.
 
-Implementation completion does not imply every device/platform check passed.
-See status for the exact verification record.
+## Conservative development order
+
+| Order | Milestone / gate |
+| --- | --- |
+| 1 | D1: source registry and evidence semantics (this documentation task) |
+| 2 | P2: remaining MVP hardening, scanner/device verification and traceable corrections |
+| 3 | P1: approximately 3–5 diverse, carefully reviewed real products |
+| 4 | P3a: company identity resolution, PRH/YTJ first in Finland |
+| 5 | P3b: stable legal entity, brand and sourced relationship model |
+| 6 | P4: one small official Finnish evidence provider after design/terms review |
+| 7 | P5: consolidate the evidence/event schema from the reviewed integration |
+| 8 | P6: additional providers incrementally |
+| 9 | P7: richer conflict and uncertainty tooling |
+| 10 | P8: evaluated AI summaries of attributable evidence |
+| 11 | P9: optional scoring only after separate methodology review |
+
+Documentation/source research may run ahead. Deeper integrations must not bypass
+hardening, the correction workflow or real-product learning. No exact order among
+providers within a phase is committed. Minimum provenance, uncertainty and conflict
+preservation apply from the first evidence record, not only at P5/P7.
 
 ## D0 — Documentation baseline
 
-Status: completed by this documentation change, before new feature work.
+Completed in the 2026-09-05 documentation baseline: portable README setup,
+implementation/test status, current architecture, proposals separated from adopted
+decisions, and documentation maintenance/handoff instructions. This historical
+milestone does not imply that later implementation or device checks were complete.
+
+## D1 — Source registry and evidence semantics
+
+Completed as documentation in this change: the [registry](data-sources.md) records
+integrated/candidate/context/restricted uses, source classes, evidence statuses,
+future provenance fields and license gates. [D008](decisions.md) adopts provenance
+and legal/status fidelity. No new provider or evidence schema is implemented.
+
+## P2 — Remaining MVP hardening and traceable corrections
+
+First proposed implementation phase. Use the [technical audit](audits/2026-10-09-technical-audit.md)
+as a historical reference; UTF-8 decoding, curated validation and CI findings have
+already been addressed. Do not repeat completed work merely because it is in the audit.
 
 Completion criteria:
 
-- README provides portable setup instructions and links to the documentation index.
-- Status separates implemented behavior, test evidence, owner reports, and unknowns.
-- Architecture describes the current API and storage.
-- Roadmap distinguishes proposed work from completed milestones.
-- Decisions record current choices and open product questions.
-- Documentation maintenance and handoff instructions are available.
+- Strengthen scanner/end-to-end coverage where practical: cancellation, permission
+  denial, lifecycle/background/resume, repeated scans and lookup failure/retry.
+- Recheck the real Android barcode flow on a physical device when available.
+  Record device/build/date and actual results; CI is not proof of camera behavior.
+- Design and implement a deliberate correction workflow with a reviewable diff,
+  expected prior state and explicit conflict handling. Correct product facts and
+  their sources together, with atomic writes, rollback and repeat-run safety.
+- Preserve before/after provenance and the meaning of review dates. Do not silently
+  overwrite local edits, reset the database or refresh dates without human review.
+- Keep CI green; address remaining meaningful error/timeout gaps and existing
+  dependency warnings deliberately, without unnecessary upgrades.
 
-## P1 — Small real-product pilot
+## P1 — Small real-product learning pilot
 
-Proposed next product milestone: grow to 10–20 manually reviewed real products
-across several brands and product categories.
-
-Completion criteria:
-
-- Each new EAN passes validation and has a source supporting the product match.
-- Company roles have explicit evidence; unknown roles remain unknown.
-- Source scope and review date are visible for every reviewed record.
-- Representative products are checked by both scan and manual entry on Android.
-- Record lookup success rate, incorrect matches, missing data, and review effort.
-- Verify source links, permission denial, cancellation, repeated scans, and
-  background/resume behavior using a dated manual test record.
-
-The pilot should reveal which data source and company relationships are actually
-needed before broader automated ingestion is chosen.
-
-## P2 — Reliable data corrections and automated checks
-
-Proposed engineering milestone, before repeated edits to existing curated data.
+After P2, aim for approximately **3–5 reviewed real products in total**, across
+more than one product/company shape. Do not manually scale to dozens yet.
 
 Completion criteria:
 
-- Define and implement an explicit way to update product facts and sources together.
-- Test corrections, repeat runs, conflicts with local edits, and rollback on failure.
-- Preserve the meaning of source review dates and make changes traceable.
-- Run backend tests, Flutter analysis, and Flutter tests in GitHub Actions.
-- Add targeted coverage for timeout behavior and remaining meaningful error cases.
-- Record supported tool versions and results; address dependency warnings deliberately.
+- Validate EANs and evidence for each product match. Distinguish brand,
+  manufacturer and unresolved ownership; do not invent relationships for variety.
+- Retain source scope and actual review dates. Exercise deliberate corrections.
+- Check representative products by manual entry and real Android scanning.
+- Record lookup success, incorrect matches, missing data and review/correction effort.
+- Use findings to identify real entity/data-model requirements before broad ingestion.
 
-## P3 — Company identity and relationships
+Open Food Facts may help discovery; external retrieval remains distinct from
+reviewed Ethico evidence. Product categories and users remain a scoped pilot choice.
 
-Proposed after pilot findings.
+## P3a — Company identity resolution
 
-Completion criteria:
+After pilot findings, investigate Finnish PRH/YTJ first for stable official company
+identifiers. A product/brand-to-company match needs its own evidence; name similarity
+alone is insufficient. Preserve matching basis, ambiguity and registry dates.
+GLEIF/external identifiers and Wikidata may bridge identities where useful, subject
+to coverage, primary-source checks and terms. Registry identity does not prove ownership.
 
-- Stable company identifiers support a shared company profile across products.
-- Manufacturer, brand owner, and parent company are distinct sourced relationships.
-- Unknown and conflicting relationships can be represented without guessing.
-- Schema migration preserves existing product/source data.
-- UI and API make the scope and uncertainty of each relationship understandable.
+## P3b — Stable entity and relationship model
 
-## P4 — First ethical evidence profile
+Use the resolver/pilot findings to distinguish legal entities, brands, manufacturers,
+brand owners and parents. Give identifiers namespaces and relationships attributable
+sources, dates/validity and uncertainty. Support missing/conflicting relationships
+without guessing. Review schema migration and API/UI implications before implementation;
+preserve existing products and evidence.
 
-Proposed after company identity is sufficiently reliable.
+## P4 — First official evidence-provider integration
 
-Completion criteria:
+Choose one small, high-confidence Finnish use case after a dedicated design review.
+Candidates include Tukes's current Vaarallisettuotteet.fi service (MAREK successor),
+KKV or Finlex. No provider is selected or authorized by this roadmap.
 
-- Agree the initial topic/category and one pilot company.
-- Model each claim with its subject, source, relevant dates, scope, and uncertainty.
-- Distinguish company statements from independent evidence and record conflicts.
-- Manually review the first profile and validate that users understand its limits.
-- Decide whether a rating is useful only after defining a defensible methodology.
+Review access/reuse/attribution, record coverage, legal status, entity matching and
+user-visible wording. Bound the integration tightly and retain minimum provenance,
+original status and uncertainty from the first record. Allegations, proposals,
+settlements and final judgments must remain distinct. Evaluate a manually reviewed
+example before expanding scope.
 
-## Later, subject to separate decisions
+## P5 — Evidence/event schema
 
-- AI summaries derived from reviewed evidence, with claim-level traceability and
-  evaluation for unsupported statements, omissions, and conflicting sources.
-- Automated source discovery/import after choosing sources and update rules.
-- Wider deployment: hosted HTTPS backend, operations, backups, and release builds.
-- Android application ID and proper release signing; iOS build and device checks.
-- Offline behavior, alternatives, personalization, accounts, and payments only if
-  supported by user needs and an explicit scope decision.
+Consolidate and version a minimal schema using P4's concrete findings: status,
+jurisdiction, dates, exact scope, source and entity, plus original language/status,
+case/external identifiers, reporting role, license/attribution and uncertainty.
+Do not strengthen a claim during ingestion or translation. Preserve corrections,
+appeals and conflicting claims as separately attributable records.
 
-## Decisions needed before the next implementation
+## P6 — Incremental provider expansion
 
-1. Which product categories and users should the first pilot serve?
-2. Is manufacturer identity enough for the pilot, or is brand ownership essential?
-3. What evidence is sufficient to display a company relationship?
-4. Which ethical topic should the first manually reviewed profile address?
+Add regulatory, human-rights, supply-chain and environmental providers one scoped,
+reviewed integration at a time. Follow the registry's rights/access gates and prefer
+originating authorities over aggregator-only references. Country/commodity risk,
+facility emissions and benchmarks do not establish a company's misconduct or a
+product's footprint without evidence supporting the exact claim and relationships.
 
-Record resolved choices in the [decision log](decisions.md).
+Product-level carbon-footprint/LCA datasets remain a research TODO with **no named
+or approved provider**. Separately verify legitimacy, methodology, coverage and
+reuse rights, including units, boundaries, allocation, year/geography and uncertainty.
+
+## P7 — Conflict and uncertainty tooling
+
+Improve review/display workflows for contradictory sources, disputed entity matches,
+corrections and stale records. Never silently merge contradictions. Basic preservation
+and explicit unknowns are required from the outset; this phase adds richer tooling.
+
+## P8 — AI evidence summaries, only later
+
+Summaries must link material claims to attributable evidence and preserve status,
+scope and uncertainty. Evaluate unsupported statements, omissions, translation errors
+and conflicts. AI is not a fact source and may not invent or upgrade claims.
+
+## P9 — Optional ethical scoring, separately reviewed
+
+Data availability does not authorize a score. First design and review a documented,
+reproducible, versioned, evidence-backed methodology with explicit normative choices,
+coverage limits and uncertainty. Retain evidence visibility independently of a score.
+
+## Other later work, subject to separate decisions
+
+Hosted HTTPS operations/backups, Android release identity/signing, iOS builds/device
+checks, offline support, alternatives, personalization, accounts and payments remain
+outside this source-strategy task. Record adopted choices in the [decision log](decisions.md).
