@@ -7,7 +7,9 @@ import httpx
 from app import __version__
 from app.ean import is_valid_ean
 
-USER_AGENT = f"Ethico/{__version__} (https://github.com/AndersWahlberg/my-new-project)"
+# Identify the application and version without disclosing a developer identity,
+# personal repository URL, email address, or other user-specific metadata.
+USER_AGENT = f"Ethico/{__version__}"
 TIMEOUT_SECONDS = 3.0
 
 
