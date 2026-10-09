@@ -41,8 +41,8 @@ open only after a user taps them; no web research occurs during a product lookup
 
 ## Manual acceptance check
 
-1. Restart the backend, rebuild the Flutter app (new native URL plugin), and keep
-   the USB forwarding/API_BASE_URL used for the working Pixel setup.
+1. Restart the backend, rebuild the Flutter app, and keep the privacy-first USB
+   forwarding/API_BASE_URL used for real-device development.
 2. Scan or enter 6430051512933 and verify the product, company, and manufacturer role.
 3. Scroll through both sources; verify their scope and date. Open both in the browser.
 4. Return to Ethico and look up a demo code; it must be labelled fictional and
@@ -85,16 +85,20 @@ returned bot protection during inspection; the official API and licensing guide
 were accessible. The API introduction also asks reusers to register their use;
 no registration, account creation or external correspondence was performed here.
 
-Requests identify the app as
-`Ethico/0.3.0 (https://github.com/AndersWahlberg/my-new-project)`;
-the version is shared with the FastAPI application. The documented product-read
-limit is **15 requests/minute/IP**, shared across this backend's users. There is
-no rate limiter in this MVP: no automatic retries or redirects, and one request
-per local miss. HTTPX has a three-second timeout per network operation (not a
-total wall-clock deadline). A 429 or other upstream failure becomes a temporary
-503. Capacity/rate-limit handling needs review before broader public use.
+Requests identify only the application and version, for example `Ethico/0.3.0`.
+The User-Agent intentionally contains no developer name, personal repository URL,
+email address, device identifier, or other user-specific metadata. The version is
+shared with the FastAPI application.
+
+The documented product-read limit is **15 requests/minute/IP**, shared across this
+backend's users. There is no rate limiter in this MVP: no automatic retries or
+redirects, and one request per local miss. HTTPX has a three-second timeout per
+network operation (not a total wall-clock deadline). A 429 or other upstream
+failure becomes a temporary 503. Capacity/rate-limit handling needs review before
+broader public use.
 
 An external lookup reveals the requested barcode and normal HTTP metadata,
-including the backend's network address and custom User-Agent, to Open Food Facts.
-Ethico sends no device identity, account data, camera frames or analytics. Opening
-a source link is a separate user-initiated browser request.
+including the backend's network address and the privacy-minimized application
+User-Agent, to Open Food Facts. Ethico sends no device identity, account data,
+camera frames or analytics. Opening a source link is a separate user-initiated
+browser request.
