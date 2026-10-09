@@ -2,8 +2,7 @@
 
 Recorded: **2026-09-05**.
 
-D001–D005 capture choices already reflected in implementation baseline
-[ab7bcf5](https://github.com/AndersWahlberg/my-new-project/commit/ab7bcf5e9b7fa2fa867f872915b344c94eaf211e)
+D001–D005 capture choices already reflected in implementation baseline `ab7bcf5`
 and its architecture/source notes. Their recording date is not a claim about the
 original decision date. D006 records the documentation-first direction agreed
 with the project owner. Future proposals are kept separate below.
