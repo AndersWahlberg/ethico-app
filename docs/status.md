@@ -1,11 +1,38 @@
 # Project status
 
-Last reviewed: **2026-09-05**.
+## UTF-8 decoding update — 2026-10-09
+
+The Flutter API client now explicitly decodes successful response bytes as UTF-8
+before JSON parsing. The API contract, status-code handling, backend, product data,
+and dependency versions are unchanged. This update is recorded by the containing
+commit/PR on `fix/flutter-utf8-json-decoding`.
+
+A regression test in `frontend/test/product_details_test.dart` supplies raw UTF-8
+bytes with `Content-Type: application/json` and no charset, then checks exact
+product, brand, company, source-title, and source-scope text through `ProductApi.lookup`.
+The focused test failed with the previous parser (`Crème München` became
+`CrÃ¨me MÃ¼nchen`) and passed in the full suite after the fix.
+
+Verification actually run with Flutter 3.29.2 / Dart 3.7.2:
+
+- From `frontend`: `flutter pub get` passed with the lockfile unchanged;
+  `flutter analyze` reported no issues; `flutter test` passed all **12 tests**.
+- From `backend`: `.venv\Scripts\python.exe -B -m pytest -q -p no:cacheprovider
+  --basetemp=C:\Users\anwah\Documents\Codex\2026-10-09\l-y\work\ethico-utf8-pytest
+  --tb=short` passed all **14 tests**, with the existing Starlette HTTPX and AnyIO
+  BlockingPortal deprecation warnings. Temporary databases were outside the repository.
+
+The following baseline and its historical verification results are retained;
+this update does not establish new physical-device or iOS verification.
+
+## Historical baseline
+
+Baseline reviewed: **2026-09-05**.
 Implementation baseline: [ab7bcf5](https://github.com/AndersWahlberg/my-new-project/commit/ab7bcf5e9b7fa2fa867f872915b344c94eaf211e),
 "Add first real product with source-backed manufacturer information".
 
 This is a snapshot of the committed repository, not uncommitted local work.
-This documentation update changes no application behavior.
+The original September documentation update changed no application behavior.
 
 ## Current milestone
 
