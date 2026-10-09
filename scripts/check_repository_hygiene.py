@@ -42,7 +42,11 @@ TEXT_RULES = {
     "Slack token": re.compile(r"\bxox[baprs]-[0-9A-Za-z-]{10,}\b"),
 }
 
-EMAIL_RE = re.compile(r"\b[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+# Require an alphabetic character immediately before @ and at the start of the
+# domain. This avoids treating generated asset names such as icon@2x.png as email.
+EMAIL_RE = re.compile(
+    r"\b[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]*[A-Za-z]@[A-Za-z][A-Za-z0-9.-]*\.[A-Za-z]{2,}\b"
+)
 ALLOWED_EMAIL_DOMAINS = {
     "example.com",
     "example.org",
