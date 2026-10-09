@@ -50,6 +50,11 @@ Startup creates or upgrades `backend/data/ethico.sqlite3` and inserts missing
 demo and curated records. Existing rows are preserved; do not delete your database
 to install this update. SQLite uses Python's built-in library.
 
+To correct existing reviewed facts, use the explicit
+[curated correction workflow](docs/curated-corrections.md). It validates expected
+and replacement states, previews by default, and applies facts and sources only
+with `--apply`; any unexpected local state blocks the entire batch.
+
 Start your emulator in Android Studio's Device Manager. In a second terminal:
 
 ```cmd
