@@ -94,14 +94,42 @@ scope and license. Failures/incomplete records return a retryable 503 rather tha
 a false 404. Consequence: live lookup depends on upstream availability and the
 shared per-IP rate limit; company resolution remains a separate future layer.
 
+## D008 — Evidence provenance and legal/status fidelity
+
+Status: adopted 2026-10-09 as a project/architecture principle; documentation-only.
+Implementation baseline: `b5274ecbc2b0ec290849f3dd3773d86d828f1704`; the containing
+documentation PR records this decision.
+
+Every material claim must be traceable to a source. Evidence status must not be
+strengthened during ingestion, translation or summarization. Self-reported,
+supplier-reported, independent and official evidence remain distinguishable;
+missing facts stay unknown. Secondary aggregators must not erase primary-source
+provenance. Conflicting claims remain separately attributable. License/reuse
+constraints are part of integration design. AI may organize and summarize
+evidence but may neither invent claims nor upgrade their evidentiary status.
+
+Reason: complaints, investigations, proposals, settlements, recalls, benchmarks
+and final judgments have different meanings. A shared display or ingestion path
+must not turn them into a generic finding of misconduct or imply guilt through
+an unsupported company/product relationship.
+
+Consequences: the [source registry](data-sources.md) defines A–D source classes
+(not a truth score), distinct statuses, future provenance metadata and rights
+review gates. The [roadmap](roadmap.md) places hardening, deliberate corrections
+and a small learning pilot before deeper evidence integrations. Ethical scoring
+requires a separate transparent, reproducible, versioned methodology decision.
+No connector, schema, API or dependency is changed by adopting this principle.
+
 ## Open proposals
 
-The following are not adopted decisions:
+The following are not adopted implementation decisions. Registry candidate
+approval permits investigation/design, not automatic implementation or reuse:
 
-- Expand the pilot to 10–20 reviewed products.
+- Complete a diverse 3–5-product learning pilot after remaining MVP hardening.
 - Introduce stable company identities and sourced ownership relationships.
 - Choose an ethical evidence schema, first category, and any rating methodology.
-- Select additional external data sources, automated research, AI models, or hosting.
+- Select and design candidate integrations, automated research, AI models or hosting
+  through separately reviewed implementation scopes.
 - Choose offline support, accounts, monetization, or an iOS milestone.
 
 See the [roadmap](roadmap.md) for proposed order and completion criteria.

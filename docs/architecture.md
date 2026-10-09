@@ -152,3 +152,20 @@ The current company field is a name stored on each product, not a separate compa
 entity or an ownership graph. Sources are associated with products; there is no
 ethical-claim model. Proposed company relationships, correction workflows, and
 ethical evidence profiles are described in the [roadmap](roadmap.md).
+
+### Evidence-source design direction (not implemented)
+
+[D008](decisions.md#d008--evidence-provenance-and-legalstatus-fidelity) adopts
+claim-level provenance and preservation of legal/evidentiary status. The
+[source registry](data-sources.md) defines future metadata and integration gates.
+Only Open Food Facts is currently an external API integration.
+
+Future records should retain entity identifiers and matching basis, original
+source and language, dates, jurisdiction, exact claim/scope/status, reporting role,
+license/attribution and uncertainty. An authoritative publisher does not make an
+allegation a finding. Ingestion, translation and summaries must not strengthen
+status; contradictory claims remain separately attributable.
+
+This is an architectural direction, not an implemented evidence/event schema or
+API change. MVP hardening, traceable corrections and the small reviewed pilot
+precede company resolution, stable entities and deeper evidence integrations.

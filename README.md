@@ -8,6 +8,8 @@ claims must be source-backed; future AI will analyze evidence, not invent opinio
 Start with [current status](docs/status.md), then [architecture](docs/architecture.md),
 [roadmap](docs/roadmap.md), and [decisions](docs/decisions.md).
 The [documentation index](docs/README.md) explains how to keep these up to date.
+The [source registry](docs/data-sources.md) records evidence semantics, provider
+candidates and reuse limits; candidate status does not mean an integration exists.
 The [original project idea](docs/project-idea.md) describes the long-term vision.
 
 ## Current MVP
