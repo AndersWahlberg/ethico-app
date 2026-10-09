@@ -32,6 +32,46 @@ Widget screen(Product product, Future<bool> Function(Uri) openLink) =>
     );
 
 void main() {
+  test('preserves UTF-8 JSON text without a charset', () async {
+    final client = MockClient(
+      (_) async => http.Response.bytes(
+        utf8.encode(
+          jsonEncode({
+            'ean': '6430051512933',
+            'product_name': 'Crème München',
+            'brand': 'Mäkelä',
+            'company': 'Yhtiö Äänekoski',
+            'company_role': 'manufacturer',
+            'is_demo': false,
+            'sources': [
+              {
+                'title': 'Mäkelä – tuotetiedot',
+                'url': 'https://example.com/product',
+                'checked_on': '2026-10-09',
+                'supports':
+                    'Yhtiö Äänekoski valmistaa Crème München -tuotteen.',
+              },
+            ],
+          }),
+        ),
+        200,
+        headers: {'content-type': 'application/json'},
+      ),
+    );
+    addTearDown(client.close);
+
+    final result = await ProductApi(client).lookup('6430051512933');
+
+    expect(result.name, 'Crème München');
+    expect(result.brand, 'Mäkelä');
+    expect(result.company, 'Yhtiö Äänekoski');
+    expect(result.sources.single.title, 'Mäkelä – tuotetiedot');
+    expect(
+      result.sources.single.supports,
+      'Yhtiö Äänekoski valmistaa Crème München -tuotteen.',
+    );
+  });
+
   test('parses source metadata from an API response', () async {
     final api = ProductApi(
       MockClient(
