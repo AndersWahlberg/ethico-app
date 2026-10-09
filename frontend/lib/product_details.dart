@@ -44,8 +44,8 @@ class ProductDetails extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(product.name, style: Theme.of(context).textTheme.titleLarge),
-          Text('Brand: ${product.brand}'),
-          Text('Company: ${product.company}'),
+          Text('Brand: ${product.brand ?? 'Not supplied'}'),
+          Text('Company: ${product.company ?? 'Not yet resolved'}'),
           Text(
             'Company role: ${product.companyRole == 'manufacturer' ? 'Manufacturer' : product.companyRole ?? 'Not specified'}',
           ),
@@ -69,7 +69,13 @@ class ProductDetails extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(source.supports),
-              Text('Source checked: ${source.checkedOn}'),
+              if (source.provider != null)
+                Text('External dataset: ${source.provider}'),
+              if (source.checkedOn != null)
+                Text('Source checked: ${source.checkedOn}'),
+              if (source.retrievedOn != null)
+                Text('Retrieved: ${source.retrievedOn}'),
+              if (source.license != null) Text('License: ${source.license}'),
               TextButton.icon(
                 onPressed: () => _openSource(context, source.url),
                 icon: const Icon(Icons.open_in_new),

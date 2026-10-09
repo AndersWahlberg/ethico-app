@@ -121,7 +121,7 @@ class _LookupScreenState extends State<LookupScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Small local dataset. Fictional demo products are labelled separately.',
+            'Local products first, then Open Food Facts. Fictional demos are labelled separately.',
           ),
           const Text('Try: 2000000000015'),
           if (_loading)
