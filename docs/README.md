@@ -8,7 +8,8 @@ Start here when joining the project or resuming work after a break.
 | [Architecture](architecture.md) | Components, API contract, storage, and platform constraints |
 | [Roadmap](roadmap.md) | Completed milestones and proposed next steps with completion criteria |
 | [Decision log](decisions.md) | Recorded decisions, reasons, consequences, and open questions |
-| [Product sources](product-sources.md) | Evidence and limits for the first real product |
+| [Source registry](data-sources.md) | Official provider registry, evidence/status semantics, provenance and reuse limits |
+| [Product sources](product-sources.md) | Current reviewed product references and Open Food Facts integration notes |
 | [Original project idea](project-idea.md) | Long-term product vision; not a list of implemented features |
 | [Setup history](setup-notes.md) | Historical tooling and milestone results; not current verification |
 | [Repository README](../README.md) | Setup, run commands, sample EANs, and test commands |
