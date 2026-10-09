@@ -1,5 +1,38 @@
 # Project status
 
+## Explicit curated corrections — 2026-10-09
+
+The separate `python -m app.apply_curated_corrections` maintenance CLI validates
+the desired dataset and complete correction registry before database access.
+Preview is read-only/default; `--apply` checks all expected/replacement states
+under a write reservation and commits facts and sources together. Conflicts,
+missing products and demo rows block the entire batch; database failures roll
+back all changes. Matching replacement is an idempotent no-op. Review dates are
+written exactly as supplied. Normal startup still preserves existing rows and
+never runs corrections. See the [workflow guide](curated-corrections.md) and D009.
+
+`backend/app/curated_corrections.json` is initially empty. No real product data,
+development database, frontend, dependency or Open Food Facts behavior changed.
+The traceable-correction portion of P2 is complete; scanner/end-to-end hardening
+and physical-device verification remain unfinished.
+
+Verification on Python 3.12 for the containing correction-workflow commit/PR:
+
+- `python -B -m app.validate_curated`: passed (one unchanged curated product).
+- `python -B -m app.apply_curated_corrections --validate-only`: passed (zero corrections).
+- Default preview against an initialized temporary database: passed; bytes unchanged.
+- `python -B -m pytest -q -p no:cacheprovider -o faulthandler_timeout=30
+  --basetemp=<isolated-temporary-directory> --tb=short`: **204 passed**, including
+  56 new correction tests. Existing Starlette HTTPX and AnyIO deprecation warnings
+  remain visible. An initial sandboxed run stalled at the existing API tests and
+  was stopped; the complete run outside those restrictions passed.
+- Tests cover exact Unicode/date/source preservation, source-only changes, mixed
+  already-applied/pending batches, whole-batch conflict blocking, missing/demo
+  targets, validation before database access, concurrent-writer exclusion,
+  statement/commit failure rollback, foreign keys, startup preservation and CLI exits.
+- `git diff --check`: passed. Local Flutter tests were not rerun (no frontend changes).
+  Automatic Backend/Flutter CI results are recorded in the PR.
+
 ## Evidence-source strategy — 2026-10-09 (documentation only)
 
 The [official source registry](data-sources.md) now records provider candidates,
