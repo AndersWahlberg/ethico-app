@@ -116,6 +116,22 @@ do not duplicate data or refresh check dates. Changing an existing curated recor
 requires a deliberate database update alongside an evidence review; editing the
 JSON alone does not overwrite that row.
 
+The separate `app.apply_curated_corrections` maintenance CLI implements that
+deliberate update. It validates all desired curated products and all correction
+definitions before opening SQLite. One active definition per EAN records a reason
+and complete expected/replacement facts and sources; replacement must match the
+current curated entry. Source order alone is ignored during exact comparison.
+
+Preview opens an existing database read-only. Explicit `--apply` uses an existing
+read/write connection with foreign keys enabled and `BEGIN IMMEDIATE` before
+classifying every target. A conflict, missing product or demo row blocks the whole
+batch. Pending facts and sources are replaced in one transaction; any SQL/commit
+failure rolls back all changes. Matching replacement is a successful no-op.
+The command never initializes/upgrades the database or refreshes review dates.
+Startup does not import or execute correction definitions. Git tracks definitions;
+no schema, execution-history table or API change was added. See the
+[correction guide](curated-corrections.md) for commands and multi-revision limits.
+
 `checked_on` records the source review date, not the server startup date or a
 guarantee of current accuracy. Unknown roles remain null and unsourced rows have
 an empty sources list. The API validates source dates and HTTP(S) URLs.
@@ -150,7 +166,7 @@ mobile client. iOS native builds and camera behavior remain to be verified on ma
 
 The current company field is a name stored on each product, not a separate company
 entity or an ownership graph. Sources are associated with products; there is no
-ethical-claim model. Proposed company relationships, correction workflows, and
+ethical-claim model. Proposed company relationships and
 ethical evidence profiles are described in the [roadmap](roadmap.md).
 
 ### Evidence-source design direction (not implemented)

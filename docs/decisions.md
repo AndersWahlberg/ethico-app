@@ -52,7 +52,8 @@ facts. Repeated startup must not refresh review dates.
 
 Reason: protect local data and preserve the relationship between facts and sources.
 Consequence: changing the JSON alone cannot correct an already imported record.
-A deliberate correction workflow is proposed in roadmap P2; none exists yet.
+At adoption, no correction workflow existed. D009 now implements the deliberate
+maintenance path while retaining this initialization rule.
 
 ## D005 — Android first, with local development networking
 
@@ -119,6 +120,27 @@ review gates. The [roadmap](roadmap.md) places hardening, deliberate corrections
 and a small learning pilot before deeper evidence integrations. Ethical scoring
 requires a separate transparent, reproducible, versioned methodology decision.
 No connector, schema, API or dependency is changed by adopting this principle.
+
+## D009 — Explicit expected-state curated corrections
+
+Status: adopted and implemented 2026-10-09 in the containing correction-workflow PR.
+
+Keep startup insert-only for existing curated rows. A separate CLI validates the
+complete desired dataset and correction registry, previews by default and requires
+`--apply` to mutate an existing initialized database. One active correction per
+EAN holds complete expected/replacement facts and sources plus a reviewed reason.
+Replacement must match the current curated entry; Git preserves previous definitions.
+
+Reason: correcting a reviewed fact must not silently overwrite local changes or
+leave new facts paired with old evidence. Exact expected-state checks, a write
+reservation before inspection and one transaction for the batch protect that boundary.
+
+Consequences: any conflict, missing target or demo row blocks all pending changes.
+SQL/commit failures roll back the whole batch. Matching replacement is an idempotent
+no-op; source ordering is insignificant but stored values/dates are preserved exactly.
+No history table, dependency, schema or API is added. Older unrecognized states need
+explicit review, not automatic migration-chain replay. This completes P2 corrections,
+not scanner/device verification. See the [workflow](curated-corrections.md).
 
 ## Open proposals
 
