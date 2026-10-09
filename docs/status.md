@@ -1,5 +1,16 @@
 # Project status
 
+## GitHub Actions CI — 2026-10-09
+
+The containing CI commit/PR adds `.github/workflows/ci.yml` for pull requests into
+`main` and pushes to `main`. Independent Ubuntu jobs run backend dependency
+installation, curated-data validation and pytest on Python 3.12, and dependency
+resolution, analysis and tests on Flutter 3.29.2 / Dart 3.7.2. There is no deployment,
+secret configuration, or Android/iOS artifact build. Physical-device barcode
+scanning, permissions, and device-to-API connectivity remain outside CI coverage.
+GitHub run/job results are recorded in the PR; adding the workflow alone does not
+establish a successful remote run. Earlier verification records below remain historical.
+
 ## Curated-data validation update — 2026-10-09
 
 Startup now validates the complete curated JSON file before opening SQLite or
