@@ -1,240 +1,214 @@
 # Project status
 
-## Explicit curated corrections — 2026-10-09
+Last updated: **2026-10-09**.
 
-The separate `python -m app.apply_curated_corrections` maintenance CLI validates
-the desired dataset and complete correction registry before database access.
-Preview is read-only/default; `--apply` checks all expected/replacement states
-under a write reservation and commits facts and sources together. Conflicts,
-missing products and demo rows block the entire batch; database failures roll
-back all changes. Matching replacement is an idempotent no-op. Review dates are
-written exactly as supplied. Normal startup still preserves existing rows and
-never runs corrections. See the [workflow guide](curated-corrections.md) and D009.
-
-`backend/app/curated_corrections.json` is initially empty. No real product data,
-development database, frontend, dependency or Open Food Facts behavior changed.
-The traceable-correction portion of P2 is complete; scanner/end-to-end hardening
-and physical-device verification remain unfinished.
-
-Verification on Python 3.12 for the containing correction-workflow commit/PR:
-
-- `python -B -m app.validate_curated`: passed (one unchanged curated product).
-- `python -B -m app.apply_curated_corrections --validate-only`: passed (zero corrections).
-- Default preview against an initialized temporary database: passed; bytes unchanged.
-- `python -B -m pytest -q -p no:cacheprovider -o faulthandler_timeout=30
-  --basetemp=<isolated-temporary-directory> --tb=short`: **204 passed**, including
-  56 new correction tests. Existing Starlette HTTPX and AnyIO deprecation warnings
-  remain visible. An initial sandboxed run stalled at the existing API tests and
-  was stopped; the complete run outside those restrictions passed.
-- Tests cover exact Unicode/date/source preservation, source-only changes, mixed
-  already-applied/pending batches, whole-batch conflict blocking, missing/demo
-  targets, validation before database access, concurrent-writer exclusion,
-  statement/commit failure rollback, foreign keys, startup preservation and CLI exits.
-- `git diff --check`: passed. Local Flutter tests were not rerun (no frontend changes).
-  Automatic Backend/Flutter CI results are recorded in the PR.
-
-## Evidence-source strategy — 2026-10-09 (documentation only)
-
-The [official source registry](data-sources.md) now records provider candidates,
-access/reuse limits, A–D source classes, distinct evidence statuses and future
-provenance metadata. D008 in the [decision log](decisions.md) adopts evidence
-provenance and legal/status fidelity. The [roadmap](roadmap.md) puts remaining MVP
-hardening and traceable corrections before a 3–5-product learning pilot and deeper
-entity/evidence integrations.
-
-Implementation baseline: `b5274ecbc2b0ec290849f3dd3773d86d828f1704`, including
-Open Food Facts v1. No application, API/schema, curated data or dependency changes.
-Local application tests were not rerun for this documentation-only task; earlier
-results below retain their original scope. Documentation checks and any automatic
-PR CI results are recorded in the containing pull request.
-
-## Open Food Facts fallback — 2026-10-09
-
-Local SQLite lookup still has priority and returns existing facts and reviewed
-sources unchanged. Local misses now use one read-only Open Food Facts v3 request
-for code, name and brands. External products are never persisted. Missing company
-and role remain null; missing brand is represented explicitly. Sources show Open
-Food Facts, its product URL, scope, UTC retrieval date and ODbL 1.0 attribution;
-retrieval is not a human check. Upstream failures/unusable records return a distinct
-503; an upstream 404 retains not-found behavior with dataset-neutral wording.
-
-Verified locally on Python 3.12.14 and Flutter 3.29.2 / Dart 3.7.2:
-
-- Dart formatting completed for changed files.
-- `python -B -m app.validate_curated`: passed (one unchanged curated product).
-- Full pytest suite: **148 passed**, two existing deprecation warnings retained.
-  Tests mock upstream HTTP, including timeouts, malformed data, Unicode, no local-hit
-  calls, and no external persistence. Temporary SQLite files are isolated.
-- `flutter pub get`: succeeded without dependency changes.
-- `flutter analyze`: no issues; full `flutter test`: **15 passed**.
-- One optional read-only production smoke request for **3017620422003** returned
-  **HTTP 200**; required identity fields and brand parsed, company stayed null.
-  No writes, retries, or stored third-party data. Automated tests remain offline.
-
-CI results for this feature are recorded in its PR. Physical-device scanning was
-not rerun. Shared upstream rate limits, dataset completeness and future company
-resolution remain limitations; see [source notes](product-sources.md#open-food-facts-read-only-fallback).
-
-## GitHub Actions CI — 2026-10-09
-
-The containing CI commit/PR adds `.github/workflows/ci.yml` for pull requests into
-`main` and pushes to `main`. Independent Ubuntu jobs run backend dependency
-installation, curated-data validation and pytest on Python 3.12, and dependency
-resolution, analysis and tests on Flutter 3.29.2 / Dart 3.7.2. There is no deployment,
-secret configuration, or Android/iOS artifact build. Physical-device barcode
-scanning, permissions, and device-to-API connectivity remain outside CI coverage.
-GitHub run/job results are recorded in the PR; adding the workflow alone does not
-establish a successful remote run. Earlier verification records below remain historical.
-
-## Curated-data validation update — 2026-10-09
-
-Startup now validates the complete curated JSON file before opening SQLite or
-performing any schema/seed/import writes. The API and importer share the existing
-EAN helper. Validation rejects malformed structures, missing/wrong-type/blank
-required fields, invalid EAN shape/checksum, duplicate EANs, malformed/non-HTTP(S)
-URLs, duplicate source URLs per product, and invalid YYYY-MM-DD calendar dates.
-Nullable company roles and empty source lists remain supported; facts are not
-normalized or overwritten. The curated product file and dependencies are unchanged.
-
-From `backend`, run `.venv\Scripts\python.exe -m app.validate_curated` for a
-database-free check; an optional file path checks a proposed dataset. Errors include
-file/product/source/field context and return a non-zero exit code. The existing
-database-preservation and idempotent-startup behavior remains in place.
-
-Verification for the containing commit/PR on `feat/curated-data-validation`:
-
-- `.venv\Scripts\python.exe -B -m app.validate_curated`: passed for the real dataset
-  (one curated product).
-- `.venv\Scripts\python.exe -B -m pytest -q -p no:cacheprovider
-  --basetemp=C:\Users\anwah\Documents\Codex\2026-10-09\l-y\work\ethico-validation-final
-  --tb=short`: **111 passed**, including 97 new parametrized validation/command/import
-  cases; two existing Starlette HTTPX and AnyIO BlockingPortal deprecation warnings.
-- From `frontend`, `flutter analyze`: no issues; `flutter test`: **12 passed**.
-- Python syntax/indentation checks and `git diff --check` passed. No Python formatter
-  or linter is configured/installed; no formatting dependency was added. These
-  checks ran before the final test pass.
-
-Tests prove that an invalid later product leaves a pre-existing legacy database
-byte-for-byte unchanged, invalid input creates no new database, and the standalone
-command returns success/failure without database access. Validation checks data
-shape and identifiers, not source truth or live URL availability.
-
-## UTF-8 decoding update — 2026-10-09
-
-The Flutter API client now explicitly decodes successful response bytes as UTF-8
-before JSON parsing. The API contract, status-code handling, backend, product data,
-and dependency versions are unchanged. This update is recorded by the containing
-commit/PR on `fix/flutter-utf8-json-decoding`.
-
-A regression test in `frontend/test/product_details_test.dart` supplies raw UTF-8
-bytes with `Content-Type: application/json` and no charset, then checks exact
-product, brand, company, source-title, and source-scope text through `ProductApi.lookup`.
-The focused test failed with the previous parser (`Crème München` became
-`CrÃ¨me MÃ¼nchen`) and passed in the full suite after the fix.
-
-Verification actually run with Flutter 3.29.2 / Dart 3.7.2:
-
-- From `frontend`: `flutter pub get` passed with the lockfile unchanged;
-  `flutter analyze` reported no issues; `flutter test` passed all **12 tests**.
-- From `backend`: `.venv\Scripts\python.exe -B -m pytest -q -p no:cacheprovider
-  --basetemp=C:\Users\anwah\Documents\Codex\2026-10-09\l-y\work\ethico-utf8-pytest
-  --tb=short` passed all **14 tests**, with the existing Starlette HTTPX and AnyIO
-  BlockingPortal deprecation warnings. Temporary databases were outside the repository.
-
-The following baseline and its historical verification results are retained;
-this update does not establish new physical-device or iOS verification.
-
-## Historical baseline
-
-Baseline reviewed: **2026-09-05**.
-Implementation baseline: [ab7bcf5](https://github.com/AndersWahlberg/my-new-project/commit/ab7bcf5e9b7fa2fa867f872915b344c94eaf211e),
-"Add first real product with source-backed manufacturer information".
-
-This is a snapshot of the committed repository, not uncommitted local work.
-The original September documentation update changed no application behavior.
+This document describes the current repository state. Historical verification
+commands are intentionally kept free of personal usernames, home-directory paths,
+email addresses, and other machine-specific identifiers.
 
 ## Current milestone
 
 Ethico is an Android-focused product lookup MVP with source attribution.
-A scan or manually entered EAN retrieves facts from a small local SQLite dataset.
-The next development milestones remain proposals in the [roadmap](roadmap.md).
 
-## Implemented
+Implemented:
 
-- EAN-8 and EAN-13 camera scanning, with manual entry as a fallback.
-- Shape validation in Flutter and shape/check-digit validation in FastAPI.
-  EAN values stay as text, preserving leading zeros.
-- Product name, brand, company, company role, and fictional-demo labeling.
-- Source title, HTTP(S) link, review date, and a statement of what the source supports.
-  Source opening failures leave the product and copyable URL visible.
-- Loading, invalid-input, not-found, network-failure, and timeout handling.
-  Failed lookups clear the previous product.
-- Camera lifecycle handling and protection against returning multiple detections.
-  Camera images are decoded on the device; lookup requests contain only the EAN.
-- SQLite initialization, an upgrade from the original schema, and transactional
-  insertion of missing curated products and sources.
-- GET /health and GET /products/{ean}.
+- EAN-8 and EAN-13 camera scanning, with manual entry fallback.
+- Flutter shape validation and authoritative FastAPI EAN/check-digit validation.
+- Product name, brand, company, company role, demo labeling, and source metadata.
+- Loading, invalid-input, not-found, temporary-provider, timeout, and source-link handling.
+- Local SQLite product lookup with three fictional demo fixtures and one reviewed real product.
+- Read-only Open Food Facts fallback for local misses.
+- Explicit curated-data validation before database access.
+- Explicit, atomic curated-data correction workflow.
+- GitHub Actions CI for backend and Flutter checks.
 
-## Data and evidence
+Not implemented:
 
-The seeded dataset contains **three fictional demo fixtures and one real product**:
-Leader Performance Creatine Monohydrate 300 g, EAN 6430051512933.
-The recorded company is Leader Foods Oy with role manufacturer.
+- ethical scores or AI summaries
+- automatic company identity/ownership resolution
+- broader ethical evidence integrations
+- accounts, payments, analytics, telemetry, or production deployment
+- production Android signing/release configuration
+- verified iOS build/device behavior
 
-Two references are stored, checked on 2026-09-05. Kespro supports the EAN and
-manufacturer mapping; Leader's page supports the product name and size.
-These are product-fact sources, not an independent audit or an ethical rating.
-See [the evidence notes](product-sources.md).
+## Privacy and security posture
 
-Existing local database rows can differ from the seed data. Editing
-curated_products.json does not update an already imported record or its sources.
+The application has no user accounts, analytics SDK, telemetry, persistent scan
+history, or on-device product cache. Camera frames are decoded on-device and are
+not sent to the backend; lookup requests contain only the detected/entered EAN.
 
-## Technology
+Open Food Facts receives the requested barcode and ordinary HTTP metadata on a
+local miss. The application identifies itself only by product name/version in its
+User-Agent; developer identity, personal repository URLs, email addresses, and
+device identifiers are not intentionally sent.
 
-- Python 3.12 in the documented development environment; FastAPI and Uvicorn.
-- SQLite through Python's built-in sqlite3 module.
-- Flutter 3.29.2 / Dart 3.7.2 in the documented development environment.
-- Flutter packages: http 1.3.0, mobile_scanner 6.0.2, url_launcher 6.3.1.
-- pytest and HTTPX for backend tests; flutter_test for client tests.
+Local databases, `.env` files, signing material, Android `local.properties`, build
+artifacts, logs, and common editor/OS files are ignored by Git. Repository hygiene
+rules prohibit committing personal contact information, absolute home-directory
+paths, secrets, credentials, private keys, device identifiers, or unnecessary
+user-activity logs.
 
-The requirements files and pubspec files are authoritative for dependencies.
-See [architecture](architecture.md) for the API and platform details.
+For local phone testing, prefer USB forwarding (`adb reverse`) with the backend
+bound to loopback. Disable normal access logging when a test specifically requires
+that lookup EANs not be written to terminal logs.
 
-## Verification record
+A public deployment requires a separate operational security review, including
+HTTPS, authentication/abuse controls where appropriate, rate limiting, log
+minimization/retention, deployment secrets, backups, and production signing.
 
-| Area | Evidence and limits |
-| --- | --- |
-| Backend at ab7bcf5 | On 2026-09-05, 14 tests passed in an isolated copy of the GitHub backend, using the existing project Python environment. Two upstream deprecation warnings concerned HTTPX TestClient and the AnyIO BlockingPortal alias. |
-| Backend command | From the isolated backend directory: python -m pytest -q -p no:cacheprovider --basetemp=../test-temp-review --tb=short. A fresh review-specific temporary directory was used after the system temporary directory denied access. |
-| Flutter at ab7bcf5 | 11 tests identified and reviewed across widget_test.dart and product_details_test.dart. They were not run in this repository review; current flutter analyze was not run either. |
-| Earlier builds/tests | setup-notes.md records earlier backend/Flutter passes and an Android debug APK build. These are historical milestone results, not a full test run of ab7bcf5. |
-| Physical phone | The project owner reported testing the app on a phone and successfully scanning one real product. This does not establish completion of every camera, source-link, or lifecycle acceptance check for ab7bcf5. |
-| iOS | Project scaffolding and a camera usage description exist; a native iOS build and device behavior remain unverified. |
-| CI | No GitHub Actions workflows or runs were found during the 2026-09-05 review. |
+## Product data and evidence
 
-Backend tests cover lookup, leading zeros, invalid and unknown EANs, source
-metadata, repeat initialization, preservation of existing rows, and schema upgrades.
-Flutter tests cover lookup UI, loading/errors, response parsing, source display,
-link-opening callbacks, demo labeling, missing evidence, and rejection of non-web
-links. They do not exercise physical barcode decoding or a live mobile-to-API connection.
+The seeded dataset contains three fictional demo fixtures and one reviewed real
+product:
 
-## Not implemented and known limitations
+- Leader Performance Creatine Monohydrate 300 g
+- EAN `6430051512933`
+- brand `Leader`
+- company `Leader Foods Oy`
+- role `manufacturer`
 
-- No ethical evidence model, ethical scores, generative AI, automated web research,
-  account system, payments, or production deployment.
-- No separate company profiles, company identifiers, ownership graph, or automatic
-  product-to-company resolution. A company name and role are stored per product.
-- Other real products normally return not found because the dataset is small.
-- No general workflow for correcting existing curated rows and sources.
-- Local development requires a running backend and the appropriate API_BASE_URL.
-  On-device decoding does not make the product lookup available offline.
-- Android release still uses com.example.ethico and debug signing; these have
-  explicit TODOs in the build configuration.
-- Timeout UI and camera lifecycle/permission behavior need focused verification.
-- No open GitHub issues or pull requests were found at review time.
+Two reviewed product-fact sources support the recorded identity. They are not an
+ethical rating or an independent manufacturer audit. See
+[product source notes](product-sources.md).
+
+Missing evidence remains unknown. Product/company identity, ownership, ethical
+claims, and provider status must not be inferred beyond what sources support.
+
+## Open Food Facts fallback
+
+Local SQLite lookup has priority. A local miss makes one read-only Open Food Facts
+API request for `code`, `product_name`, and `brands`.
+
+Behavior:
+
+- no external product persistence or cache
+- no company inference
+- no retries or redirects
+- three-second HTTPX timeout per network operation
+- upstream 404 maps to product-not-found
+- unusable responses, rate limiting, and provider/network failures map to a safe temporary failure
+- retrieved external results carry provider attribution, source URL, retrieval date, scope, and ODbL 1.0 license metadata
+
+The provider request User-Agent is `Ethico/<version>` and intentionally contains no
+personal developer metadata.
+
+Automated provider tests use HTTPX MockTransport and make no live Open Food Facts
+requests.
+
+## Curated-data validation
+
+Startup validates the complete curated JSON dataset before opening SQLite or
+performing schema/import writes.
+
+Validation includes:
+
+- JSON/list/object structure
+- required text fields
+- EAN shape/checksum and uniqueness
+- HTTP(S) source URL shape
+- duplicate source URLs per product
+- exact calendar dates
+
+Run from `backend`:
+
+```text
+python -m app.validate_curated
+```
+
+Validation checks data structure and identifiers, not factual truth or live URL
+availability.
+
+## Explicit curated corrections
+
+Editing `curated_products.json` does not silently overwrite an existing imported
+SQLite row. Reviewed corrections use the separate explicit maintenance workflow:
+
+```text
+python -m app.apply_curated_corrections --validate-only
+python -m app.apply_curated_corrections --database <database-path>
+python -m app.apply_curated_corrections --database <database-path> --apply
+```
+
+Properties:
+
+- preview is read-only by default
+- expected and replacement states are validated before database access
+- replacement must match the current reviewed curated entry
+- product facts and sources are compared together
+- conflicts, demo rows, or missing targets block the entire pending batch
+- apply runs in one transaction with foreign keys enabled
+- failures roll back the batch
+- already-applied corrections are safe no-ops
+- review dates are never refreshed automatically
+- normal application startup never runs corrections
+
+See [curated correction workflow](curated-corrections.md) and decision D009.
+
+## CI and verification
+
+`.github/workflows/ci.yml` runs on pull requests into `main` and pushes to `main`.
+
+Backend job:
+
+- Python 3.12
+- install development requirements
+- validate curated data
+- run the complete pytest suite
+
+Flutter job:
+
+- Flutter 3.29.2 / Dart 3.7.2
+- resolve dependencies
+- `flutter analyze`
+- `flutter test`
+
+CI does not prove physical camera behavior, Android permissions, real-device
+connectivity, native release signing, or iOS behavior.
+
+Most recent merged correction-workflow verification recorded **204 passing backend
+tests**. The Open Food Facts milestone recorded **148 passing backend tests** and
+**15 passing Flutter tests**. These counts are historical results for their
+containing revisions; current CI is authoritative for new changes.
+
+## Scanner verification status
+
+Scanner/end-to-end hardening and a complete physical-device acceptance run remain
+unfinished P2 work.
+
+A real-device verification must explicitly cover at least:
+
+- permission grant and denial
+- scan success
+- cancellation/back navigation
+- duplicate-frame/result protection
+- background/resume behavior
+- retry after lookup failure
+- a reviewed local product
+- an Open Food Facts fallback product
+- camera release after leaving the scanner
+
+Automated tests and emulator builds must not be described as physical-camera proof.
+
+## Platform/deployment limitations
+
+Android development is currently the primary target.
+
+- Debug builds permit local cleartext HTTP for development.
+- Release builds are not production-ready.
+- Android still uses the placeholder application ID `com.example.ethico`.
+- Release configuration still uses debug signing.
+- iOS scaffolding exists but native iOS build/device behavior is unverified.
+
+Before public distribution, assign a project-owned application ID and configure a
+private release signing key outside Git.
 
 ## Immediate focus
 
-Establish and maintain this documentation baseline before implementing another
-feature. Choose the next milestone from the [roadmap](roadmap.md); ownership
-research and ethical summaries should follow evidence and data-model decisions.
+1. Complete privacy/security cleanup and repository hygiene checks.
+2. Complete scanner/end-to-end hardening.
+3. Run and record privacy-first physical Android verification.
+4. Run the small 3–5 reviewed-product learning pilot.
+5. Continue with company identity resolution only after the pilot confirms the data model needs.
+
+See [roadmap](roadmap.md), [architecture](architecture.md), and
+[decisions](decisions.md) for the longer-term plan.

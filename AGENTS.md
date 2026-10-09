@@ -29,6 +29,20 @@ Ethico is an evidence-first product.
 - Never commit secrets, credentials, API keys, local databases, build artifacts, or environment-specific files.
 - Do not upgrade dependencies unless the task specifically requires it or there is a clearly documented reason.
 
+## Privacy and security hygiene
+
+Repository content must not expose personal or machine-specific information unless it is deliberately required for the product.
+
+- Never commit personal email addresses, phone numbers, street addresses, account identifiers, private usernames, device identifiers, or other personal contact data.
+- Never commit absolute local home-directory paths; use repository-relative paths or neutral placeholders such as `<local-home>/...` or `<temporary-directory>/...`.
+- Do not place a developer's personal repository/profile URL in outbound application headers, telemetry, provider metadata, or other runtime network requests.
+- Never commit secrets, tokens, passwords, private keys, signing keys, keystores, `.env` files, local databases, or service credentials.
+- Keep test logs and documentation sanitized before committing them; replace local paths with neutral placeholders.
+- Do not add analytics, telemetry, crash reporting, or user/device tracking without an explicit product decision and privacy review.
+- Minimize logged user activity. Do not introduce persistent scan/search history or raw identifiers into logs unless there is a documented operational need and retention policy.
+- Treat external requests as data disclosure boundaries. Document exactly what is sent and avoid unnecessary identifying headers or metadata.
+- Before finishing a task, check changed files for accidental personal data, secrets, local paths, generated databases, and signing material.
+
 ## Git workflow
 
 For normal development work:
