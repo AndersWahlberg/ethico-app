@@ -1,47 +1,51 @@
 # Architecture
 
-Implementation baseline reviewed on 2026-09-05: [ab7bcf5](https://github.com/AndersWahlberg/my-new-project/commit/ab7bcf5e9b7fa2fa867f872915b344c94eaf211e).
-See [status](status.md) for verification and [decisions](decisions.md) for recorded rationale.
+See [status](status.md) for current verification and [decisions](decisions.md) for
+recorded rationale.
 
 ```text
-Camera or manual EAN -> Flutter -> HTTP/JSON -> FastAPI -> validate EAN -> SQLite
-                                                                         |
-                                                           miss -> Open Food Facts
+Camera or manual EAN
+        |
+        v
+      Flutter
+        |
+        v
+ GET /products/{ean}
+        |
+        v
+     FastAPI
+        |
+  validate EAN/checksum
+        |
+   +----+------------------+
+   |                       |
+   v                       v
+ SQLite local data     Open Food Facts
+                         local miss only
 ```
 
-## Small, explicit responsibilities
+## Responsibilities
 
-- `main.dart` owns input, loading, result, and error state using setState.
-- `scanner_screen.dart` owns the camera and returns one EAN through Navigator.
-  A guard prevents multiple detections from closing multiple routes. The camera
-  pauses on app inactivity, resumes on return, and is disposed when leaving.
-- `product_api.dart` owns the HTTP request, a ten-second timeout, and JSON parsing.
-  Tests inject an HTTP client; the screen closes only clients it creates.
-- `main.py` maps lookup results to HTTP and uses `ean.py` for EAN shape/check-digit
-  validation. The same helper is used by curated-data validation.
-- `validate_curated.py` validates the complete JSON dataset before database access
-  and provides the read-only `python -m app.validate_curated [path]` command.
-- `open_food_facts.py` makes one HTTPS API v3 request only on a local miss.
-  Its contract is a mapped product, None for upstream 404, or
-  `ExternalLookupUnavailable` for failures/unusable responses. The app factory
-  accepts a provider; its HTTPX transport is injectable for offline tests.
-  HTTPX uses a three-second timeout per network operation, no retries, and no
-  redirect following. A per-lookup client closes connections and does not retain
-  cookies between users. There is no external cache, database write, or sync.
-- `product_details.dart` displays product facts and per-source scope/date, and
-  opens HTTP(S) source links in the browser using url_launcher.
-- `database.py` initializes and queries products and their sources. Each operation
-  closes its connection; queries use placeholders rather than SQL interpolation.
+- `frontend/lib/main.dart` owns manual input, loading, result, and error state.
+- `frontend/lib/scanner_screen.dart` owns camera scanning and returns one EAN to the ordinary lookup flow.
+- `frontend/lib/product_api.dart` owns HTTP lookup, timeout handling, and JSON parsing.
+- `frontend/lib/product_details.dart` renders product facts and source metadata and opens HTTP(S) source links after user action.
+- `backend/app/main.py` exposes the FastAPI routes and maps lookup outcomes to HTTP responses.
+- `backend/app/ean.py` provides authoritative EAN shape/check-digit validation.
+- `backend/app/database.py` owns SQLite initialization and lookup.
+- `backend/app/validate_curated.py` validates the complete reviewed curated dataset before database access.
+- `backend/app/apply_curated_corrections.py` performs explicit expected-state reviewed corrections.
+- `backend/app/open_food_facts.py` performs one privacy-minimized, read-only external fallback request after a local miss.
 
-An application factory accepts a database path so tests can use temporary files.
-No ORM, repository/service layers, or state-management framework is needed here.
+The architecture deliberately remains small. There is no ORM, dependency injection
+framework, account service, analytics stack, background sync, or microservice split.
 
 ## API contract
 
-`GET /products/{ean}` accepts 8 or 13 ASCII digits with a valid check digit.
-EAN remains text everywhere so leading zeros survive.
+`GET /products/{ean}` accepts EAN-8 or EAN-13 values containing ASCII digits and a
+valid check digit. EAN values remain strings so leading zeroes survive.
 
-Success (200):
+Successful local and external lookups use the same product envelope:
 
 ```json
 {
@@ -55,133 +59,181 @@ Success (200):
 }
 ```
 
-Unknown valid EAN after local and external lookup: 404 with
-`{"detail":"Product not found."}`.
+Invalid input returns 422. A valid EAN absent from both local data and Open Food
+Facts returns 404. Provider/network/unusable-response failures return a safe 503
+without exposing upstream exception details.
 
-Local hits keep their existing response fields, facts, and reviewed sources and
-make no external request. External results use the same product envelope, with
-nullable `brand` and `company`, null `company_role`, and `is_demo: false`.
-The provider requests `code,product_name,brands`. A nonblank product name and a
-matching EAN are required. OFF's leading-zero normalization is accepted when the
-valid EANs differ only in padding; Ethico returns the original requested EAN.
-Missing/blank brand is null; reported brand text is retained without company inference.
-Mismatched identifiers, invalid field types, incomplete identity, malformed JSON,
-timeouts/network failures, rate limiting and unexpected HTTP statuses return 503:
-`{"detail":"Product information could not be checked right now. Please try again."}`.
-Flutter displays this distinct retryable message without upstream details.
+`GET /health` is a process responsiveness check, not a database readiness probe.
 
-Each external result has one source with `provider: "Open Food Facts"`, its
-HTTPS product-page URL, scope, `license: "ODbL 1.0"`, a UTC `retrieved_on` date,
-and null `checked_on`. Retrieval does not imply human review. Existing curated
-sources retain their checked dates and serialized shape; additional optional
-source fields are omitted when unset. SQLite and curated JSON remain unchanged.
-Flutter explicitly renders `Company: Not yet resolved` and `Brand: Not supplied`
-when those facts are missing. Attribution and retrieval dates appear in Sources.
+## Local data
 
-Invalid length, characters, or check digit: 422 with a readable detail message.
-The UI trims manual whitespace and checks length/characters; the backend is the
-authority for the check digit. Errors clear the previous result.
+SQLite stores product facts and source metadata.
 
-`GET /health` returns `{"status":"ok"}`; it is a process check, not a database
-integrity check.
+`products` contains:
 
-## Database and evidence limits
+- EAN
+- product name
+- brand
+- company
+- nullable company role
+- demo flag
 
-The products table adds nullable `company_role` and boolean `is_demo` (stored as
-an SQLite integer). A separate `product_sources` table has `ean`, `title`, `url`,
-`checked_on`, and `supports`; `(ean, url)` is its primary key. One product can
-have multiple references, each with a clear statement of what it supports.
+`product_sources` contains:
 
-Startup first reads and validates the complete curated file, before opening SQLite
-or creating its parent directory. Invalid input raises a contextual `CuratedDataError`
-without changing schema, demo rows, existing products, or sources. Validation covers
-list/object shapes, required nonblank string fields, EAN checksums/uniqueness, source
-HTTP(S) URLs with hosts, per-product duplicate URLs, and exact YYYY-MM-DD calendar
-dates. It reuses the existing Pydantic HttpUrl validation for API-compatible URLs;
-no dependency or schema framework was added. URL normalization is used only for
-duplicate comparison (for example, host case and the default trailing slash);
-original data is preserved for import. No live URL retrieval or fact verification occurs.
+- EAN
+- title
+- URL
+- review date
+- statement describing what the source supports
 
-The nullable role must still be present. Empty source lists and an empty dataset
-are allowed; additional fields are tolerated, but only the existing model's fields
-are imported. Required text is checked without trimming or rewriting stored facts.
-The command reports the first error; rerun it after correcting that error.
+Queries use SQLite placeholders rather than interpolating user input.
 
-After validation, startup checks the old schema with PRAGMA table_info, adds missing columns, and
-marks the existing three demo codes. It imports missing records from
-`app/curated_products.json` with their sources in a transaction. Existing records
-are preserved, and sources are attached only when a curated product is newly
-inserted, to avoid attaching evidence to unrelated local edits. Repeated starts
-do not duplicate data or refresh check dates. Changing an existing curated record
-requires a deliberate database update alongside an evidence review; editing the
-JSON alone does not overwrite that row.
+The local database is generated at runtime and is ignored by Git.
 
-The separate `app.apply_curated_corrections` maintenance CLI implements that
-deliberate update. It validates all desired curated products and all correction
-definitions before opening SQLite. One active definition per EAN records a reason
-and complete expected/replacement facts and sources; replacement must match the
-current curated entry. Source order alone is ignored during exact comparison.
+## Curated import
 
-Preview opens an existing database read-only. Explicit `--apply` uses an existing
-read/write connection with foreign keys enabled and `BEGIN IMMEDIATE` before
-classifying every target. A conflict, missing product or demo row blocks the whole
-batch. Pending facts and sources are replaced in one transaction; any SQL/commit
-failure rolls back all changes. Matching replacement is a successful no-op.
-The command never initializes/upgrades the database or refreshes review dates.
-Startup does not import or execute correction definitions. Git tracks definitions;
-no schema, execution-history table or API change was added. See the
-[correction guide](curated-corrections.md) for commands and multi-revision limits.
+`backend/app/curated_products.json` is the reviewed desired dataset.
 
-`checked_on` records the source review date, not the server startup date or a
-guarantee of current accuracy. Unknown roles remain null and unsourced rows have
-an empty sources list. The API validates source dates and HTTP(S) URLs.
+Startup:
 
-The first real record is Leader's 300 g creatine product, EAN 6430051512933.
-Kespro identifies the EAN and manufacturer; Leader's own page supports the
-product name. Manufacturer, brand owner, and parent company are distinct roles.
-This record asserts only the manufacturer role, with source attribution. No
-ethical claims, scores, or independent manufacturer audit are implied.
+1. validates the complete curated file
+2. opens/creates SQLite only after validation succeeds
+3. creates/upgrades the small schema
+4. inserts missing demo and curated rows transactionally
 
-## Dependencies and platform choices
+Existing rows are deliberately not overwritten by ordinary startup. This avoids
+silently attaching new evidence to locally edited or stale facts.
 
-Python: FastAPI, Uvicorn and HTTPX 0.28.1 at runtime, plus pytest for tests.
-The previously used HTTPX pin is promoted from development requirements without
-an upgrade. sqlite3 is built in.
-Flutter: http 1.3.0, mobile_scanner 6.0.2, and url_launcher 6.3.1 for source links,
-pinned for the installed Flutter
-3.29.2 / Dart 3.7.2 and Android build tools. The scanner's bundled barcode model
-works without a first-use model download, at the cost of extra app size.
-The model decodes barcodes; no generative AI or ethical analysis is involved.
+## Explicit corrections
 
-A newer scanner release inspected during implementation required newer native
-build dependencies. We kept a compatible release instead of upgrading the
-entire Android toolchain in this milestone.
+Reviewed changes to an already imported curated row use the separate correction
+workflow.
 
-Android debug HTTP is enabled for local development only. Release builds retain
-HTTPS defaults. The API address is set with API_BASE_URL at build/run time;
-the default targets the Android emulator. CORS is unnecessary for this native
-mobile client. iOS native builds and camera behavior remain to be verified on macOS.
+Each active correction records:
+
+- EAN
+- reason
+- complete expected state
+- complete replacement state
+
+Replacement must match the current reviewed curated entry. Preview is read-only.
+Explicit apply opens an existing database, enables foreign keys, reserves the write,
+classifies all targets, and updates facts and sources in one transaction.
+
+A conflict, missing target, or demo target blocks the entire pending batch.
+Already-applied corrections are successful no-ops. Startup never automatically
+executes correction definitions.
+
+## Open Food Facts fallback
+
+A local miss makes one HTTPS request to the Open Food Facts v3 product endpoint for:
+
+- code
+- product name
+- brands
+
+Properties:
+
+- no retries
+- no redirect following
+- three-second timeout per network operation
+- no cookies retained between lookups
+- no external product persistence/cache
+- no company inference
+- requested EAN must match the returned valid identifier, allowing leading-zero normalization
+- product name must be present and nonblank
+
+The provider request User-Agent contains only the application name/version, for
+example `Ethico/0.3.0`. It intentionally excludes developer identity, personal
+repository URLs, email addresses, device identifiers, and other user-specific
+metadata.
+
+External results carry provider attribution, source URL, retrieval date, scope, and
+license metadata. Retrieval is distinct from a human evidence review.
+
+## Privacy and data flow
+
+Camera barcode decoding happens on-device. Application code sends only the EAN to
+the backend; it does not upload camera frames.
+
+The application currently has:
+
+- no accounts
+- no analytics
+- no telemetry
+- no persistent scan history
+- no on-device product cache
+
+A backend operator can still observe ordinary HTTP request metadata. Because the
+lookup EAN appears in the request path, default server access logs can record it.
+Privacy-first local physical-device testing should therefore use loopback/USB
+forwarding and may disable access logging when the test requires no scan trace.
+
+A public deployment must explicitly design log minimization and retention rather
+than inheriting development-server defaults.
+
+## Source links
+
+Source URLs are displayed to the user and only opened after a tap. Flutter accepts
+only HTTP(S) URLs with a nonempty host before handing them to the platform browser.
+
+There is no server-side arbitrary source fetching in the current application, so
+this source-link flow does not create a current SSRF surface.
+
+## Android development boundary
+
+The default Flutter API address targets the Android emulator development bridge.
+Debug Android configuration permits cleartext HTTP for local development only.
+
+Release configuration is not production-ready:
+
+- placeholder application ID remains
+- debug signing remains configured for release builds
+- production HTTPS/deployment controls are not implemented
+
+Public distribution requires a project-owned application ID and private release
+signing material kept outside Git.
+
+## iOS
+
+iOS scaffolding and a camera usage description exist, but native iOS build/device
+behavior has not been verified. iOS should not be described as supported until a
+native verification pass exists.
+
+## Evidence model direction
+
+Current company, brand, and role fields are still flat product-level values.
+There is no implemented company entity graph or ethical evidence/event schema.
+
+Future evidence records should preserve:
+
+- stable entity identifiers and matching basis
+- original source and source type
+- dates and jurisdiction
+- exact claim/status/scope
+- self-reported vs independent role
+- license/attribution
+- uncertainty, supersession, and conflicts
+
+An authoritative publisher does not automatically turn an allegation into a
+finding. Ingestion, translation, and future AI summaries must not strengthen the
+source's original evidentiary/legal status.
+
+See [source registry](data-sources.md) and the D008 decision in
+[decisions](decisions.md).
 
 ## Planned evolution
 
-The current company field is a name stored on each product, not a separate company
-entity or an ownership graph. Sources are associated with products; there is no
-ethical-claim model. Proposed company relationships and
-ethical evidence profiles are described in the [roadmap](roadmap.md).
+Near-term order remains conservative:
 
-### Evidence-source design direction (not implemented)
-
-[D008](decisions.md#d008--evidence-provenance-and-legalstatus-fidelity) adopts
-claim-level provenance and preservation of legal/evidentiary status. The
-[source registry](data-sources.md) defines future metadata and integration gates.
-Only Open Food Facts is currently an external API integration.
-
-Future records should retain entity identifiers and matching basis, original
-source and language, dates, jurisdiction, exact claim/scope/status, reporting role,
-license/attribution and uncertainty. An authoritative publisher does not make an
-allegation a finding. Ingestion, translation and summaries must not strengthen
-status; contradictory claims remain separately attributable.
-
-This is an architectural direction, not an implemented evidence/event schema or
-API change. MVP hardening, traceable corrections and the small reviewed pilot
-precede company resolution, stable entities and deeper evidence integrations.
+1. privacy/security cleanup
+2. scanner/end-to-end hardening
+3. real Android physical-device verification
+4. small reviewed-product pilot
+5. company identity resolution
+6. stable company/relationship model
+7. first official evidence integration
+8. broader evidence/event schema and providers
+9. conflict/uncertainty tooling
+10. AI summaries
+11. scoring only after separate methodology review
