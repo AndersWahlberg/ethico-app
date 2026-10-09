@@ -1,15 +1,18 @@
 import sqlite3
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from app.database import initialize_database
 from app.main import create_app
+from app.open_food_facts import OpenFoodFactsProvider
 
 
 @pytest.fixture
 def client(tmp_path):
-    with TestClient(create_app(tmp_path / "test.sqlite3")) as client:
+    provider = OpenFoodFactsProvider(httpx.MockTransport(lambda _: httpx.Response(404)))
+    with TestClient(create_app(tmp_path / "test.sqlite3", provider)) as client:
         yield client
 
 

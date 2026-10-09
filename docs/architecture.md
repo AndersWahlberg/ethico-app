@@ -4,7 +4,9 @@ Implementation baseline reviewed on 2026-09-05: [ab7bcf5](https://github.com/And
 See [status](status.md) for verification and [decisions](decisions.md) for recorded rationale.
 
 ```text
-Camera or manual EAN -> Flutter -> HTTP/JSON -> FastAPI -> SQLite
+Camera or manual EAN -> Flutter -> HTTP/JSON -> FastAPI -> validate EAN -> SQLite
+                                                                         |
+                                                           miss -> Open Food Facts
 ```
 
 ## Small, explicit responsibilities
@@ -19,6 +21,13 @@ Camera or manual EAN -> Flutter -> HTTP/JSON -> FastAPI -> SQLite
   validation. The same helper is used by curated-data validation.
 - `validate_curated.py` validates the complete JSON dataset before database access
   and provides the read-only `python -m app.validate_curated [path]` command.
+- `open_food_facts.py` makes one HTTPS API v3 request only on a local miss.
+  Its contract is a mapped product, None for upstream 404, or
+  `ExternalLookupUnavailable` for failures/unusable responses. The app factory
+  accepts a provider; its HTTPX transport is injectable for offline tests.
+  HTTPX uses a three-second timeout per network operation, no retries, and no
+  redirect following. A per-lookup client closes connections and does not retain
+  cookies between users. There is no external cache, database write, or sync.
 - `product_details.dart` displays product facts and per-source scope/date, and
   opens HTTP(S) source links in the browser using url_launcher.
 - `database.py` initializes and queries products and their sources. Each operation
@@ -46,8 +55,28 @@ Success (200):
 }
 ```
 
-Unknown valid EAN: 404 with
-`{"detail":"Product not found in the local dataset."}`.
+Unknown valid EAN after local and external lookup: 404 with
+`{"detail":"Product not found."}`.
+
+Local hits keep their existing response fields, facts, and reviewed sources and
+make no external request. External results use the same product envelope, with
+nullable `brand` and `company`, null `company_role`, and `is_demo: false`.
+The provider requests `code,product_name,brands`. A nonblank product name and a
+matching EAN are required. OFF's leading-zero normalization is accepted when the
+valid EANs differ only in padding; Ethico returns the original requested EAN.
+Missing/blank brand is null; reported brand text is retained without company inference.
+Mismatched identifiers, invalid field types, incomplete identity, malformed JSON,
+timeouts/network failures, rate limiting and unexpected HTTP statuses return 503:
+`{"detail":"Product information could not be checked right now. Please try again."}`.
+Flutter displays this distinct retryable message without upstream details.
+
+Each external result has one source with `provider: "Open Food Facts"`, its
+HTTPS product-page URL, scope, `license: "ODbL 1.0"`, a UTC `retrieved_on` date,
+and null `checked_on`. Retrieval does not imply human review. Existing curated
+sources retain their checked dates and serialized shape; additional optional
+source fields are omitted when unset. SQLite and curated JSON remain unchanged.
+Flutter explicitly renders `Company: Not yet resolved` and `Brand: Not supplied`
+when those facts are missing. Attribution and retrieval dates appear in Sources.
 
 Invalid length, characters, or check digit: 422 with a readable detail message.
 The UI trims manual whitespace and checks length/characters; the backend is the
@@ -99,7 +128,9 @@ ethical claims, scores, or independent manufacturer audit are implied.
 
 ## Dependencies and platform choices
 
-Python: FastAPI and Uvicorn, plus pytest/HTTPX for tests. sqlite3 is built in.
+Python: FastAPI, Uvicorn and HTTPX 0.28.1 at runtime, plus pytest for tests.
+The previously used HTTPX pin is promoted from development requirements without
+an upgrade. sqlite3 is built in.
 Flutter: http 1.3.0, mobile_scanner 6.0.2, and url_launcher 6.3.1 for source links,
 pinned for the installed Flutter
 3.29.2 / Dart 3.7.2 and Android build tools. The scanner's bundled barcode model
