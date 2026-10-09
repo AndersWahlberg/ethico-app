@@ -6,8 +6,25 @@ __pycache__/
 
 # Local data and configuration
 *.sqlite3
+*.sqlite
 *.db
+*.db3
 .env
+.env.*
+!.env.example
+*.log
+
+# Secrets and signing material
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+key.properties
+
+# Local machine configuration
+local.properties
 
 # Editors and operating systems
 .idea/
