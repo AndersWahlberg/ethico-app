@@ -85,9 +85,7 @@ def test_external_mapping_provenance_utf8_and_request_contract(lookup):
     assert request.method == "GET"
     assert str(request.url).split("?")[0] == f"https://world.openfoodfacts.org/api/v3/product/{EAN}"
     assert dict(request.url.params) == {"fields": "code,product_name,brands"}
-    assert request.headers["User-Agent"] == (
-        "Ethico/0.3.0 (https://github.com/AndersWahlberg/my-new-project)"
-    )
+    assert request.headers["User-Agent"] == "Ethico/0.3.0"
     assert request.content == b""
     assert "authorization" not in request.headers
     assert "cookie" not in request.headers
