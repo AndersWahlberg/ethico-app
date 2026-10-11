@@ -112,6 +112,12 @@ Also test denying camera access, backing out without scanning, backgrounding and
 resuming the scanner, and scanning again after a result. Manual entry remains
 available when the camera cannot be used.
 
+Scanner lifecycle and single-result handling have automated regression coverage.
+Permission denial has a specific settings/manual-entry message; other camera
+failures use a neutral manual-entry fallback. Back returns no EAN and performs no
+lookup. See the [verification record](docs/scanner-verification.md) for automated
+results and the physical Android checklist, which remains **Not yet verified**.
+
 ## Backend address
 
 The default `http://10.0.2.2:8000` reaches the host computer from the Android

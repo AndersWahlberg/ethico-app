@@ -40,6 +40,33 @@ Camera or manual EAN
 The architecture deliberately remains small. There is no ORM, dependency injection
 framework, account service, analytics stack, background sync, or microservice split.
 
+## Scanner lifecycle and lookup
+
+`ScannerScreen` supplies a controller with `autoStart: false`, EAN-8/EAN-13
+formats and `returnImage: false`. `scanner_session.dart` serializes Ethico-owned
+start/stop/dispose operations and reads actual controller initialization, running,
+permission and error state. Initial startup runs after the view mounts; subsequent
+lifecycle events wait for pending operations and apply the latest foreground state.
+All non-resumed states stop a running camera; permission-dialog transitions do not
+start or stop a controller concurrently with its initial permission request.
+
+The first ASCII 8/13-digit value closes result acceptance synchronously. Back
+closes the session without a result. Both paths cancel capture delivery and await
+camera cleanup before returning to lookup; disposal is idempotent and prevents
+further lifecycle work. Permission/camera failures show fixed safe messages with
+manual-entry fallback, without automatic settings recovery claims. Unexpected
+non-plugin errors propagate rather than being silently suppressed.
+
+`LookupScreen.scannerLauncher` is a single optional callback for widget testing;
+production still pushes the scanner route. A scan-in-progress guard prevents
+multiple launches. Cancellation preserves input and result/error state without
+HTTP; a successful result fills input and calls the ordinary lookup once. Failure
+retains that EAN, clears old facts and permits manual retry.
+
+Strategy reviewed against the installed 6.0.2 source and
+[versioned package documentation](https://pub.dev/packages/mobile_scanner/versions/6.0.2).
+See [verification](scanner-verification.md) for test boundaries and physical checks.
+
 ## API contract
 
 `GET /products/{ean}` accepts EAN-8 or EAN-13 values containing ASCII digits and a
@@ -227,7 +254,7 @@ See [source registry](data-sources.md) and the D008 decision in
 Near-term order remains conservative:
 
 1. privacy/security cleanup
-2. scanner/end-to-end hardening
+2. review completed automated scanner/end-to-end hardening
 3. real Android physical-device verification
 4. small reviewed-product pilot
 5. company identity resolution
