@@ -1,6 +1,6 @@
 # Roadmap
 
-Updated: **2026-10-09** (evidence-source strategy).
+Updated: **2026-10-11** (automated scanner hardening).
 Current implementation and verification: [status](status.md).
 Provider candidates and constraints: [source registry](data-sources.md).
 
@@ -69,17 +69,18 @@ and legal/status fidelity. No new provider or evidence schema is implemented.
 ## P2 — Remaining MVP hardening and traceable corrections
 
 Partially complete: the [traceable-correction workflow](curated-corrections.md)
-is implemented and tested on temporary databases. Scanner/end-to-end hardening
-and renewed physical-device verification remain unfinished.
+is implemented and tested on temporary databases. Automated scanner/end-to-end
+hardening is complete. Physical Android verification remains **Not yet verified**
+in the [verification record](scanner-verification.md); P2 is not fully complete.
 Use the [technical audit](audits/2026-10-09-technical-audit.md)
 as a historical reference; UTF-8 decoding, curated validation and CI findings have
 already been addressed. Do not repeat completed work merely because it is in the audit.
 
 Completion criteria:
 
-- Strengthen scanner/end-to-end coverage where practical: cancellation, permission
+- [x] Strengthen scanner/end-to-end coverage where practical: cancellation, permission
   denial, lifecycle/background/resume, repeated scans and lookup failure/retry.
-- Recheck the real Android barcode flow on a physical device when available.
+- [ ] Recheck the real Android barcode flow on a physical device when available.
   Record device/build/date and actual results; CI is not proof of camera behavior.
 - [x] Implement a deliberate correction workflow with a reviewable diff,
   expected prior state and explicit conflict handling. Correct product facts and

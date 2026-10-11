@@ -17,8 +17,9 @@ class EthicoApp extends StatelessWidget {
 }
 
 class LookupScreen extends StatefulWidget {
-  const LookupScreen({super.key, this.api});
+  const LookupScreen({super.key, this.api, this.scannerLauncher});
   final ProductApi? api;
+  final Future<String?> Function(BuildContext)? scannerLauncher;
 
   @override
   State<LookupScreen> createState() => _LookupScreenState();
@@ -31,6 +32,7 @@ class _LookupScreenState extends State<LookupScreen> {
   Product? _product;
   String? _error;
   bool _loading = false;
+  bool _scanning = false;
 
   @override
   void initState() {
@@ -80,12 +82,20 @@ class _LookupScreenState extends State<LookupScreen> {
   }
 
   Future<void> _scan() async {
-    final ean = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => const ScannerScreen()));
-    if (!mounted || ean == null) return;
-    _ean.text = ean;
-    await _lookup();
+    if (_scanning || _loading) return;
+    setState(() => _scanning = true);
+    try {
+      final ean =
+          await (widget.scannerLauncher?.call(context) ??
+              Navigator.of(context).push<String>(
+                MaterialPageRoute(builder: (_) => const ScannerScreen()),
+              ));
+      if (!mounted || ean == null) return;
+      _ean.text = ean;
+      await _lookup();
+    } finally {
+      if (mounted) setState(() => _scanning = false);
+    }
   }
 
   @override
@@ -98,7 +108,7 @@ class _LookupScreenState extends State<LookupScreen> {
           const Text('Scan a product or enter its EAN.'),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed: _loading ? null : _scan,
+            onPressed: _loading || _scanning ? null : _scan,
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text('Scan barcode'),
           ),

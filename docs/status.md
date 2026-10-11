@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: **2026-10-09**.
+Last updated: **2026-10-11**.
 
 This document describes the current repository state. Historical verification
 commands are intentionally kept free of personal usernames, home-directory paths,
@@ -172,8 +172,15 @@ containing revisions; current CI is authoritative for new changes.
 
 ## Scanner verification status
 
-Scanner/end-to-end hardening and a complete physical-device acceptance run remain
-unfinished P2 work.
+Automated scanner/end-to-end hardening is complete: serialized camera lifecycle,
+one-result acceptance, safe permission/camera errors, cancellation without lookup,
+and failure/retry/repeated-session coverage. Flutter analysis is clean and all 49
+Flutter tests pass; backend validation and all 204 tests pass. Android debug APK
+build passed. Dependencies and Android identity/signing remain unchanged.
+
+Physical Android acceptance remains **Not yet verified**, so P2 is not complete.
+See the [scanner verification record](scanner-verification.md) for results and
+the checklist. CI cannot establish real camera behavior.
 
 A real-device verification must explicitly cover at least:
 
@@ -205,7 +212,7 @@ private release signing key outside Git.
 ## Immediate focus
 
 1. Complete privacy/security cleanup and repository hygiene checks.
-2. Complete scanner/end-to-end hardening.
+2. Review the completed automated scanner/end-to-end hardening.
 3. Run and record privacy-first physical Android verification.
 4. Run the small 3–5 reviewed-product learning pilot.
 5. Continue with company identity resolution only after the pilot confirms the data model needs.
