@@ -7,8 +7,8 @@ Verified on 2026-10-11 with Flutter 3.29.2 / Dart 3.7.2 and the unchanged
 
 - `flutter pub get`: passed; dependency pins/lockfile unchanged.
 - Dart formatting and `flutter analyze`: passed.
-- Flutter suite: 49 tests passed (scanner session, real route with fake camera
-  platform, scan-to-lookup with mocked HTTP, and existing UI/API tests).
+- Flutter suite: 49 tests passed (scanner session, real route with a controlled
+  controller/preview, scan-to-lookup with mocked HTTP, and existing UI/API tests).
 - `python -m app.validate_curated`: passed.
 - `python -m app.apply_curated_corrections --validate-only`: passed.
 - Full pytest suite: 204 passed; one existing Starlette HTTPX deprecation warning.
@@ -26,8 +26,13 @@ Coverage includes ASCII EAN shape, single-result acceptance, duplicate frames,
 initial readiness, permission-dialog transitions, pending start/stop races,
 all non-resumed lifecycle states, cancellation, reopening, disposal, safe errors,
 one lookup after scanning, clearing stale facts, and retry without rescanning.
-The scanner route tests use the package's public platform interface as a fake;
-they test Ethico navigation and cleanup, not native camera implementation.
+The scanner route tests inject an exported MobileScannerController substitute
+and a preview builder into the real ScannerScreen. They retain Ethico's session,
+stream handling, error builder, Back navigation and lookup flow. No private
+package imports or native platform simulation are used. Plugin startup/options
+forwarding and native preview behavior are outside this test boundary; actual
+camera configuration is unchanged. Fresh controllers are used when reopening.
+The five route scenarios remain covered, including cleanup before returning.
 All automated HTTP/provider behavior is mocked. No live Open Food Facts requests.
 
 ## Android build and emulator verification

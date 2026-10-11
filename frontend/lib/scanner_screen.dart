@@ -4,7 +4,12 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'scanner_session.dart';
 
 class ScannerScreen extends StatefulWidget {
-  const ScannerScreen({super.key});
+  const ScannerScreen({super.key, this.controller, this.previewBuilder});
+
+  /// Optional controller/preview substitutes for camera-free route tests.
+  /// This route owns and disposes the controller, including a supplied one.
+  final MobileScannerController? controller;
+  final Widget Function(MobileScanner scanner)? previewBuilder;
 
   @override
   State<ScannerScreen> createState() => _ScannerScreenState();
@@ -12,12 +17,14 @@ class ScannerScreen extends StatefulWidget {
 
 class _ScannerScreenState extends State<ScannerScreen>
     with WidgetsBindingObserver {
-  final _controller = MobileScannerController(
-    autoStart: false,
-    formats: [BarcodeFormat.ean8, BarcodeFormat.ean13],
-    detectionSpeed: DetectionSpeed.noDuplicates,
-    returnImage: false,
-  );
+  late final _controller =
+      widget.controller ??
+      MobileScannerController(
+        autoStart: false,
+        formats: [BarcodeFormat.ean8, BarcodeFormat.ean13],
+        detectionSpeed: DetectionSpeed.noDuplicates,
+        returnImage: false,
+      );
   late final ScannerSession _session;
   StreamSubscription<BarcodeCapture>? _subscription;
   MobileScannerException? _error;
@@ -97,6 +104,14 @@ class _ScannerScreenState extends State<ScannerScreen>
     ),
   );
 
+  Widget _preview() {
+    final scanner = MobileScanner(
+      controller: _controller,
+      errorBuilder: (context, error, child) => _errorBody(error),
+    );
+    return widget.previewBuilder?.call(scanner) ?? scanner;
+  }
+
   @override
   Widget build(BuildContext context) => PopScope<String>(
     canPop: false,
@@ -113,11 +128,7 @@ class _ScannerScreenState extends State<ScannerScreen>
                     ? const SizedBox.shrink()
                     : _error != null
                     ? _errorBody(_error!)
-                    : MobileScanner(
-                      controller: _controller,
-                      errorBuilder:
-                          (context, error, child) => _errorBody(error),
-                    ),
+                    : _preview(),
           ),
           const SafeArea(
             top: false,

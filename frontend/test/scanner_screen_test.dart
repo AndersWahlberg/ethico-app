@@ -1,71 +1,76 @@
 import 'dart:async';
 import 'package:ethico/main.dart';
 import 'package:ethico/product_api.dart';
+import 'package:ethico/scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-// Types used by the package's public platform-interface start signature.
-import 'package:mobile_scanner/src/mobile_scanner_view_attributes.dart';
-import 'package:mobile_scanner/src/objects/start_options.dart';
 
-class CameraPlatform extends MobileScannerPlatform {
-  final captures = StreamController<BarcodeCapture?>.broadcast();
+// Substitutes only the exported controller operations and capture stream.
+// The real ScannerScreen and ScannerSession still own navigation and cleanup.
+class CameraController extends MobileScannerController {
+  CameraController({this.error}) : super(autoStart: false);
+
+  final captures = StreamController<BarcodeCapture>.broadcast();
   final operations = <String>[];
-  MobileScannerException? error;
-  Completer<void>? starting;
+  final MobileScannerException? error;
   Completer<void>? stopping;
 
   @override
-  Stream<BarcodeCapture?> get barcodesStream => captures.stream;
+  Stream<BarcodeCapture> get barcodes => captures.stream;
+
   @override
-  Stream<TorchState> get torchStateStream => const Stream.empty();
-  @override
-  Stream<double> get zoomScaleStateStream => const Stream.empty();
-  @override
-  Widget buildCameraView() => const SizedBox();
-  @override
-  Future<MobileScannerViewAttributes> start(StartOptions options) async {
+  Future<void> start({CameraFacing? cameraDirection}) async {
     operations.add('start');
-    expect(options.formats, [BarcodeFormat.ean8, BarcodeFormat.ean13]);
-    expect(options.returnImage, isFalse);
-    await starting?.future;
-    if (error != null) throw error!;
-    return const MobileScannerViewAttributes(
-      currentTorchMode: TorchState.unavailable,
-      size: Size(640, 480),
+    value = value.copyWith(
+      isInitialized: true,
+      isRunning: error == null,
+      error: error,
     );
   }
 
   @override
   Future<void> stop() async {
     operations.add('stop');
+    value = value.copyWith(isRunning: false);
     await stopping?.future;
   }
 
   @override
+  // Native disposal is deliberately substituted, as in the session unit tests.
+  // ignore: must_call_super
   Future<void> dispose() async {
     operations.add('dispose');
   }
-
-  @override
-  Future<void> updateScanWindow(Rect? window) async {}
 }
 
+// Exercise Ethico's actual error builder with public controller state, without
+// mounting a native camera preview or simulating the plugin's platform adapter.
+Widget cameraPreview(MobileScanner scanner) =>
+    ValueListenableBuilder<MobileScannerState>(
+      valueListenable: scanner.controller!,
+      builder:
+          (context, state, child) =>
+              state.error == null
+                  ? const SizedBox()
+                  : scanner.errorBuilder!(context, state.error!, child),
+    );
 void main() {
-  late CameraPlatform camera;
-  late MobileScannerPlatform original;
+  late CameraController camera;
+  final cameras = <CameraController>[];
+  MobileScannerException? startupError;
   late int requests;
   setUp(() {
-    original = MobileScannerPlatform.instance;
-    camera = CameraPlatform();
-    MobileScannerPlatform.instance = camera;
+    startupError = null;
     requests = 0;
+    cameras.clear();
   });
   tearDown(() async {
-    MobileScannerPlatform.instance = original;
-    await camera.captures.close();
+    for (final controller in cameras) {
+      await controller.captures.close();
+    }
   });
   Future<void> open(WidgetTester tester) async {
     final client = MockClient((request) async {
@@ -76,7 +81,26 @@ void main() {
       );
     });
     addTearDown(client.close);
-    await tester.pumpWidget(EthicoApp(api: ProductApi(client)));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LookupScreen(
+          api: ProductApi(client),
+          scannerLauncher: (context) {
+            camera = CameraController(error: startupError);
+            cameras.add(camera);
+            return Navigator.of(context).push<String>(
+              MaterialPageRoute(
+                builder:
+                    (_) => ScannerScreen(
+                      controller: camera,
+                      previewBuilder: cameraPreview,
+                    ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
     await tester.enterText(find.byType(TextField), '2000000000015');
     await tester.tap(find.text('Scan barcode'));
     await tester.pumpAndSettle();
@@ -151,7 +175,7 @@ void main() {
     testWidgets('$code shows safe fallback and permits Back/manual lookup', (
       tester,
     ) async {
-      camera.error = MobileScannerException(
+      startupError = MobileScannerException(
         errorCode: code,
         errorDetails: const MobileScannerErrorDetails(
           message: 'private native error',
